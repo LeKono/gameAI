@@ -5,7 +5,7 @@ import numpy as np
 def move_still_possible(S):
     return not (S[S==0].size == 0)
 
-
+#change2
 def move_at_random(S, p):
     xs, ys = np.where(S==0)
 
