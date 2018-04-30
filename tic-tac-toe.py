@@ -1,6 +1,4 @@
-#comment
-#other comment
-#third comment
+
 import numpy as np
 
 
