@@ -184,7 +184,7 @@ class ConnectFour:
         self.game_finished = False
         self.is_draw = False
 
-    def play_a_game(self, p1='npc', p2='npc', using_gui=False, winners_print=True):
+    def play_a_game(self, p1='npc', p2='npc', winners_print=True):
         """Two players can play a game.
 
         :note: The player name 'npc' makes the player to be a computer.
