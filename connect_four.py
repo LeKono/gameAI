@@ -1,4 +1,11 @@
+import sys, time
 import numpy as np
+import pygame
+
+BLACK = (0, 0, 0)
+BLUE = (0, 0, 255)
+RED = (255, 0, 0)
+YELLOW = (255, 255, 0)
 
 
 class ConnectFour:
@@ -177,13 +184,16 @@ class ConnectFour:
         self.game_finished = False
         self.is_draw = False
 
-    def play_a_game(self, p1='npc', p2='npc', winners_print = True):
+    def play_a_game(self, p1='npc', p2='npc', using_gui=False, winners_print=True):
         """Two players can play a game.
 
         :note: The player name 'npc' makes the player to be a computer.
 
         :param p1: Name for player 1
         :param p2: Name for player 2
+        :param winners_print: Bool to determine if winning game_field should be printed.
+
+        :returns: Tuple of (Player who had last turn, bool if game was a draw)
         """
 
         if self.game_finished:
@@ -218,10 +228,11 @@ class ConnectFour:
 
         return self.player, self.is_draw
 
-    def play_random_tournament(self, laps=1000):
+    def play_random_tournament(self, laps=1000, modulo=100):
         """Lets two NPC players play a random tournament.
 
         :param laps: determines how many laps should be played.
+        :param modulo: Modulo value for iteravive printing
         """
         wins = {
             1: 0,   # Wins of player 1
@@ -235,7 +246,7 @@ class ConnectFour:
                 wins[0] += 1
             else:
                 wins[winner] += 1
-            if not l % 100:
+            if not l % modulo:
                 print("=== Lap: {} ===\n'{}'\t{}\n'{}'\t{}\nDRAW\t{}".format(l,
                                                                              self.symbols[1],
                                                                              wins[1],
@@ -249,3 +260,49 @@ class ConnectFour:
                                                                              self.symbols[-1],
                                                                              wins[-1],
                                                                              wins[0]))
+
+    def start_gui(self):
+        pygame.init()
+
+        self._draw_board()
+        #pygame.display.update()
+
+        while not self.game_finished:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
+
+            time.sleep(2)
+
+            self.random_move()
+            self._draw_board()
+
+    def _draw_board(self):
+        """Draws the game board"""
+        squaresize = 100
+        width = 7 * squaresize
+        height = (6 + 1) * squaresize
+
+        size = (width, height)
+        radius = int(squaresize / 2 - 5)
+        screen = pygame.display.set_mode(size)
+
+        for c in range(7):
+            for r in range(6):
+                # definition of a ractangle in the GUI
+                rectangle = (c * squaresize, r * squaresize + squaresize, squaresize, squaresize)
+                circle = (int(c * squaresize + squaresize / 2), int(r * squaresize + squaresize + squaresize / 2))
+                pygame.draw.rect(screen, BLUE, rectangle)
+                if self.game_field[r][c] == 0:
+                    pygame.draw.circle(screen, BLACK, circle, radius)
+                elif self.game_field[r][c] == 1:
+                    pygame.draw.circle(screen, YELLOW, circle, radius)
+                else:
+                    pygame.draw.circle(screen, RED, circle, radius)
+
+        pygame.display.update()
+
+if __name__ == '__main__':
+
+    connect_four_game = ConnectFour()
+    connect_four_game.start_gui()
