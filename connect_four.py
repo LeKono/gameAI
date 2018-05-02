@@ -262,6 +262,9 @@ class ConnectFour:
                                                                              wins[0]))
 
     def start_gui(self):
+        """Creates a view of Connect4 using PyGame.
+        This function was inspired by the Connect4 for Python tutorial by
+        Keith Galli (YouTube)."""
         pygame.init()
 
         self._draw_board()
