@@ -179,7 +179,6 @@ class ConnectFour:
         """Resets the game state."""
         self.game_field = np.zeros((6, 7), dtype=int)
         self.offset = {c: 5 for c in range(0, 7)}
-        self.symbols = {1: 'Y', -1: 'R', 0: ' '}
         self.player = 1
         self.game_finished = False
         self.is_draw = False
@@ -240,7 +239,7 @@ class ConnectFour:
             0: 0    # Draws
         }
 
-        for l in range(0, laps+1):
+        for l in range(0, laps):
             winner, draw = self.play_a_game(winners_print=False)
             if draw:
                 wins[0] += 1
@@ -268,7 +267,6 @@ class ConnectFour:
         pygame.init()
 
         self._draw_board()
-        #pygame.display.update()
 
         while not self.game_finished:
             for event in pygame.event.get():
