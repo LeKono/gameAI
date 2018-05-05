@@ -273,10 +273,13 @@ class ConnectFour:
                 if event.type == pygame.QUIT:
                     sys.exit()
 
-            time.sleep(2)
+            time.sleep(1)
 
             self.random_move()
             self._draw_board()
+
+            if self.game_finished:
+                print("{} won the game!".format(self.symbols[self.player]))
 
     def _draw_board(self):
         """Draws the game board"""
@@ -304,6 +307,6 @@ class ConnectFour:
         pygame.display.update()
 
 if __name__ == '__main__':
-
+    """Start Connect4 GUI calculation."""
     connect_four_game = ConnectFour()
     connect_four_game.start_gui()
