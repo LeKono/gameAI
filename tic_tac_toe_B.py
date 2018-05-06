@@ -258,7 +258,7 @@ class TicTacToe:
 
         # Distribute keys and values to x and y lists
         for key, value in statistics.items():
-            x.append(self.symbols[key])
+            x.append(self.symbols[key] if self.symbols[key] != " " else "DRAW")
             y.append(value)
 
         plt.bar(x, y)
