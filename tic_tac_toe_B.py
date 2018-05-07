@@ -43,19 +43,33 @@ class TicTacToe:
         i = np.random.permutation(np.arange(xs.size))[0]
         self.S[xs[i], ys[i]] = self.p
 
-    def move_using_probability(self):
+    def move_using_probability(self, evaluate_move=False):
         """Makes a move based on the probability of a cell to be a winning candidate.
+
+        :param evaluate_move: Flag to set if the move should be evaluated.
         """
         xs, ys = np.where(self.S == 0)
 
         # Initialisation for a maximal statistical value
-        max = 0
+        best_probability = 0
 
         # Get the highest win participation cell from the statistical data
-        for i in range(xs.size):
-            max = np.max([max, self.probability_data['p'][(3*xs[i] + ys[i])]])
+        if not evaluate_move or np.sum(self.S) == 0:
+            for i in range(xs.size):
+                best_probability = np.max([best_probability, self.probability_data['p'][(3*xs[i] + ys[i])]])
 
-        x, y = self.probability_data['mapping'][self.probability_data['p'].index(max)]
+            x, y = self.probability_data['mapping'][self.probability_data['p'].index(best_probability)]
+
+        else:
+            # Evaluate
+            field_sums = [
+                np.sum(self.S, axis=0),
+                np.sum(self.S, axis=1),
+                np.sum(np.diag(self.S)),
+                np.sum(np.diag(np.rot90(self.S)))
+            ]
+
+            x, y = None, None #self.probability_data['mapping'][self.probability_data['p'].index(best_probability)]
 
         self.S[x, y] = self.p
 
