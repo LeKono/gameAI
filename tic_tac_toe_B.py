@@ -43,35 +43,91 @@ class TicTacToe:
         i = np.random.permutation(np.arange(xs.size))[0]
         self.S[xs[i], ys[i]] = self.p
 
-    def move_using_probability(self, evaluate_move=False):
-        """Makes a move based on the probability of a cell to be a winning candidate.
-
-        :param evaluate_move: Flag to set if the move should be evaluated.
-        """
+    def make_probability_move(self):
+        """Makes a move based on the probability of a cell to be a winning candidate."""
         xs, ys = np.where(self.S == 0)
 
         # Initialisation for a maximal statistical value
         best_probability = 0
 
         # Get the highest win participation cell from the statistical data
-        if not evaluate_move or np.sum(self.S) == 0:
-            for i in range(xs.size):
-                best_probability = np.max([best_probability, self.probability_data['p'][(3*xs[i] + ys[i])]])
+        for i in range(xs.size):
+            best_probability = np.max([best_probability, self.probability_data['p'][(3*xs[i] + ys[i])]])
 
-            x, y = self.probability_data['mapping'][self.probability_data['p'].index(best_probability)]
-
-        else:
-            # Evaluate
-            field_sums = [
-                np.sum(self.S, axis=0),
-                np.sum(self.S, axis=1),
-                np.sum(np.diag(self.S)),
-                np.sum(np.diag(np.rot90(self.S)))
-            ]
-
-            x, y = None, None #self.probability_data['mapping'][self.probability_data['p'].index(best_probability)]
+        x, y = self.probability_data['mapping'][self.probability_data['p'].index(best_probability)]
 
         self.S[x, y] = self.p
+
+    def make_evaluated_move(self):
+        """Evaluates the move of the player.
+
+        1. Is player able to win with this move?
+
+        if not:
+        2. Is other player able to win with the next move?
+
+        if not:
+        3. Take cell with highest win contribution.
+        """
+
+        # Sums for all rows, columns and diagonals
+        columns = np.sum(self.S, axis=0)
+        rows = np.sum(self.S, axis=1)
+        diagonal = np.sum(np.diag(self.S))
+        inverse_diag = np.sum(np.diag(np.rot90(self.S)))
+
+        xs, ys = np.where(self.S == 0)
+
+        # Flag to dertermine a move from strategy 1. & 2.
+        made_a_move = False
+
+        for i in range(xs.size):
+            # Check for strategy 1. else check for strategy 2.
+            # If strategy 1. move was found the loop gets interrupted!
+            # If strategy 2. move was found the loop continues to check for strat. 1. moves.
+
+            if rows[xs[i]] == 2 or columns[ys[i]] == 2:
+                x = xs[i]
+                y = ys[i]
+                made_a_move = True
+                break
+
+            elif rows[xs[i]] == -2 or columns[ys[i]] == -2:
+                x = xs[i]
+                y = ys[i]
+                made_a_move = True
+
+            # The diagonal values are dependent on the corner positions (0 & 8) and (2 & 6)
+            position = 3*xs[i] + ys[i]
+
+            if position in [0, 4, 8]:
+                if diagonal == 2:
+                    x = xs[i]
+                    y = ys[i]
+                    made_a_move = True
+                    break
+                elif diagonal == -2:
+                    x = xs[i]
+                    y = ys[i]
+                    made_a_move = True
+
+            if position in [2, 4, 6]:
+                if inverse_diag == 2:
+                    x = xs[i]
+                    y = ys[i]
+                    made_a_move = True
+                    break
+                elif inverse_diag == -2:
+                    x = xs[i]
+                    y = ys[i]
+                    made_a_move = True
+
+        if made_a_move:
+            # A strategy 1. or strategy 2. move was identified
+            self.S[x, y] = self.p
+        else:
+            # No move from strategy 1. or 2. so pick the cell with the highest winning contribution
+            self.make_probability_move()
 
     def move_was_winning_move(self):
         """Checks if a move was a winning move."""
@@ -149,14 +205,19 @@ class TicTacToe:
             # get player symbol
             name = self.symbols[self.p]
 
+            # If it is a random tournament or its player 'o's turn
             if random or self.p == -1:
                 # let player move at random
                 self.move_at_random()
+
             else:
+                # In a non random tournament the strategy of player 'x' needs to be performed
                 if x_player_method == "p":
-                    self.move_using_probability()
+                    self.make_probability_move()
+
                 elif x_player_method == "h":
-                    pass
+                    self.make_evaluated_move()
+
                 else:
                     raise Exception("Invalid value for x_player_method: '{}'".format(x_player_method))
 
@@ -173,17 +234,20 @@ class TicTacToe:
                     print('player %s wins after %d moves' % (name, mvcntr))
 
                 noWinnerYet = False
+
             else:
                 # switch player and increase move counter
                 self.p *= -1
                 mvcntr += 1
 
+        # Count played games +1
         self.games_played += 1
 
         if noWinnerYet:
             self.game_stats[0] += 1
             return None
         else:
+            # Update wining-counter for player
             self.game_stats[self.p] += 1
             return self.p
 
@@ -192,12 +256,15 @@ class TicTacToe:
         self.S = np.zeros((3, 3), dtype=int)
         self.p = 1
 
-    def play_a_tournament(self, laps=1000, printing_modulo=100, random=True):
+    def play_a_tournament(self, laps=1000, printing_modulo=100, random=True, x_player_method="p"):
         """Lets two computer players play a tournament.
 
         :param laps: Number of laps to play at the tournament.
         :param printing_modulo: Modulo to print out the state of the tournament.
         :param random: Determines if the tournament is played with random moves.
+        :param x_player_method: If random is False this parameter determines which approach player X should use:
+                                - (p)robabilistic
+                                - (h)euristic
 
         :returns: Stats dict for this tournament.
         """
@@ -208,7 +275,7 @@ class TicTacToe:
         }
 
         for l in range(0, laps):
-            winner = self.play_a_game(print_every_step=False, random=random)
+            winner = self.play_a_game(print_every_step=False, random=random, x_player_method=x_player_method)
             if winner is None:
                 tournament_statistics[0] += 1
             else:
