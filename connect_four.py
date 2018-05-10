@@ -286,8 +286,13 @@ class ConnectFour:
                             print("The game ended in a draw.")
 
             else:
-                # Human vs. npc
-                pass
+
+                while not self.game_finished:
+
+                    if self.player == -1:
+                        self.random_move()
+                    else:
+                        self.player_move()
 
         return self.player, self.is_draw
 
@@ -527,7 +532,11 @@ class ConnectFour:
         pygame.quit()
         quit()
 
+    def player_move(self):
+        """Human move"""
+        pass
+
 if __name__ == '__main__':
-    """Start Connect4 GUI calculation."""
+    """Start Connect4 GUI"""
     connect_four_game = ConnectFour()
     connect_four_game.startgame()
