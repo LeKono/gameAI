@@ -130,8 +130,8 @@ class ConnectFour:
             results.append(tokens['ld'] + 1)
             results.append(tokens['ru'] + tokens['ld'] + 1)
 
-        if 4 in results:
-            i = results.index(4)
+        if max(results) >= 4:
+            i = results.index(max(results))
 
             if i in [0, 1, 2]:
                 self.stats['win_direction']['h'] += 1
