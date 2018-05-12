@@ -1,29 +1,55 @@
-# README #
+# GameAI #
 
-This README would normally document whatever steps are necessary to get your application up and running.
+## What is this repository for? ##
 
-### What is this repository for? ###
+This project is used to manage all code developed for GameAI lecture at Uni Bonn.
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+Version: 0.1 (first project)
 
-### How do I get set up? ###
+## Project 01 ##
+Check out the [project description](https://docs.google.com/viewer?a=v&pid=sites&srcid=ZGVmYXVsdGRvbWFpbnxiaXRnYW1lYWl8Z3g6NTY1YjdkMTkzOWM4YjM1NA).
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+### Task 1 ###
+* Understand `tic-tac-toe.py`
+* Realize statistical 'strategy' for player X:
+  * Collect cell participation for wins
+  * Normalize count data
+* Realize heuristical 'strategy' for player X:
+  * Evaluate move (Can I win? -> Can enemy win? -> Best probability)
 
-### Contribution guidelines ###
+### Task 2 ###
+* Realize Connect4 similar to `tic-tac-toe.py`
+  * Realize GUI with user input
+  * Try to collect 'good move' statistics
+  
+## Project 02 ##
+Check out the [Project description](https://docs.google.com/viewer?a=v&pid=sites&srcid=ZGVmYXVsdGRvbWFpbnxiaXRnYW1lYWl8Z3g6NmE4ZTEyNjNkZTQzNWVmYg).
 
-* Writing tests
-* Code review
-* Other guidelines
+### TBD ###
 
-### Who do I talk to? ###
+## How do I get set up? ##
+To get the project on your system:
+* You need to have Python 2.7.x or python 3.x
+* You need git to be installed on your system
+* Run `git clone https://bitbucket.org/LeKono/game_ai.git` to clone the repo
 
-* Repo owner or admin
-* Other community or team contact
+Get it started:
+* TicTacToe runs on terminal:
+  * `python tic_tac_toe_B.py` starts a game of TicTacToe on terminal
+  * `from tic_tac_toe_B import TicTacToe` is how you can import TicTacToe to a python environment.
+
+* Connect4 has a terminal and GUI implementation:
+  * `python connect_four.py` starts the GUI
+  * `from connect_four import ConnectFour` can be used to import ConnectFour to a python environment.
+
+
+### The Team ###
+
+* Balci, Mehmet
+* Brüggemann, Thomas
+* Ibhaluobe, David
+* Khan, Mohammad Asif Irfan
+* Konotopez, Andrej
+* Liu, Jeff
+* Milchenski, Zdravko
+* Rahman, Mahfuzur
