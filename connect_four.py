@@ -1,6 +1,7 @@
 import time
 import numpy as np
 import pygame
+import math
 
 
 class ConnectFour:
@@ -240,12 +241,9 @@ class ConnectFour:
             },
         }
 
-    def play_a_game(self, p1='npc', winners_print=True):
+    def play_a_game(self, winners_print=True):
         """Two players can play a game.
 
-        :note: The player name 'npc' makes the player to be a computer.
-
-        :param p1: Name for player 1
         :param winners_print: Bool to determine if winning game_field should be printed.
 
         :returns: Tuple of (Player who had last turn, bool if game was a draw)
@@ -259,40 +257,28 @@ class ConnectFour:
                 print("The game ended a draw!")
             print("You may want to reset the game to play a new one. Use .reset_game() method!")
         else:
-            if p1 == 'npc':
-                # A npc game with all random moves
+            while not self.game_finished:
+                self.random_move()
 
-                while not self.game_finished:
-                    self.random_move()
+            if self.game_finished:
 
-                if self.game_finished:
+                self.stats['winning_player'][self.player] += 1
+                self.stats['win_turn_count'].append(self.player_stats[self.player]['turns_played'])
 
-                    self.stats['winning_player'][self.player] += 1
-                    self.stats['win_turn_count'].append(self.player_stats[self.player]['turns_played'])
+                for key, value in self.player_stats[self.player]['used_columns'].items():
+                    self.stats['used_columns'][key] += value
 
-                    for key, value in self.player_stats[self.player]['used_columns'].items():
-                        self.stats['used_columns'][key] += value
+                if self.is_draw:
+                    self.stats['draw'] += 1
+                else:
+                    self.stats['win_moves'].append(self.player_stats[self.player]['move_hist'])
 
-                    if self.is_draw:
-                        self.stats['draw'] += 1
+                if winners_print:
+                    self.print_game_field()
+                    if not self.is_draw:
+                        print("Player '{}' won the game!".format(self.symbols[self.player]))
                     else:
-                        self.stats['win_moves'].append(self.player_stats[self.player]['move_hist'])
-
-                    if winners_print:
-                        self.print_game_field()
-                        if not self.is_draw:
-                            print("Player '{}' won the game!".format(self.symbols[self.player]))
-                        else:
-                            print("The game ended in a draw.")
-
-            else:
-
-                while not self.game_finished:
-
-                    if self.player == -1:
-                        self.random_move()
-                    else:
-                        self.player_move()
+                        print("The game ended in a draw.")
 
         return self.player, self.is_draw
 
@@ -359,15 +345,9 @@ class ConnectFour:
         self.SMALL_TEXT = pygame.font.Font("freesansbold.ttf", 20)
         self.CLOCK = pygame.time.Clock()
 
-        self.start_gui()
+        self.intro_screen()
 
-    def start_gui_game(self):
-        """Creates a view of Connect4 using PyGame."""
-        self.reset_game()
-        self._draw_board()
-        self._play_gui_game()
-
-    def start_gui(self):
+    def intro_screen(self):
         """Realizes the 'main menu' of the game.
 
         Inspired by PyGame tutorial 10 from Santex (Start Menu)
@@ -394,18 +374,24 @@ class ConnectFour:
             self._button((250, 400, 150, 50), self.GRAY, "C. vs. C.", mouse, click, self.start_gui_game)
 
             # Human vs. Computer
-            self._button((250, 475, 150, 50), self.GRAY, "P. vs. C.", mouse, click)
-
-            # About
-            self._button((250, 550, 150, 50), self.GRAY, "About", mouse, click)
+            self._button((250, 475, 150, 50), self.GRAY, "P. vs. C.", mouse, click, self.start_gui_game, True)
 
             # Quit
-            self._button((250, 625, 150, 50), self.GRAY, "Quit", mouse, click, self._quitgame)
+            self._button((250, 550, 150, 50), self.GRAY, "Quit", mouse, click, self._quitgame)
 
             pygame.display.update()
             self.CLOCK.tick()
 
-    def _end_screen(self):
+    def start_gui_game(self, pve=False):
+        """Creates a view of Connect4 using PyGame.
+
+        :param pve: Flag to determine if Player vs. Environment game.
+        """
+        self.reset_game()
+        self._draw_board()
+        self._play_gui_game(pve)
+
+    def end_screen(self):
         """End screen definition that shows the winner."""
 
         end_screen = True
@@ -439,33 +425,45 @@ class ConnectFour:
             # Keep track of mouse action
             click = pygame.mouse.get_pressed()
 
-            self._button((590, 15, 100, 50), self.GRAY, "Back", mouse, click, self.start_gui)
+            self._button((590, 15, 100, 50), self.GRAY, "Back", mouse, click, self.intro_screen)
 
             pygame.display.update()
             self.CLOCK.tick()
 
-    def _play_gui_game(self):
+    def _play_gui_game(self, pve=False):
         """Plays a gui game
 
         This function was inspired by the Connect4 for Python tutorial by
         Keith Galli (YouTube).
+
+        :param pve: Flag to determine if Player vs. Environment game.
         """
 
         while not self.game_finished:
+
+            # Quit game by 'x' button
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self._quitgame()
 
-            time.sleep(1)
+            # Make a random move
+            if pve and self.player == 1:
+                self.player_move()
+            else:
+                self.random_move()
 
-            self.random_move()
+            # Update the game field
             self._draw_board()
 
+            # Wait one second, that way it is easier to follow for observer
+            time.sleep(1)
+
         if self.game_finished:
-            # Wait 2 sec. for observer to realize winning :P
-            #time.sleep(5)
+            # Console output of who won the game
             print("{} won the game!".format(self.symbols[self.player]))
-            self._end_screen()
+
+            # Game endscreen
+            self.end_screen()
 
     def _draw_board(self):
         """Draws the game board
@@ -501,30 +499,32 @@ class ConnectFour:
         textSurface = font.render(text, True, color)
         return textSurface, textSurface.get_rect()
 
-    def _button(self, size, color, text, mouse, click, action=None):
+    def _button(self, rect, color, text, mouse, click, action=None, action_parameter=None):
         """Function to add buttons to the PyGame instance.
 
-        :param size: The size of the button (rectangle definition)
+        :param rect: The size of the button (rectangle definition)
         :param color: The color to use for the button.
         :param text: The text to display on the button
         :param mouse: Keep track of mouse position
         :param click: Keep track of mouse action
         :param action: What should be the action to perform on a click.
         """
-        # (150,450,100,50)
 
-        if size[0] + size[2] > mouse[0] > size[0] and size[1] + size[3] > mouse[1] > size[1]:
+        if rect[0] + rect[2] > mouse[0] > rect[0] and rect[1] + rect[3] > mouse[1] > rect[1]:
             brighter_color = [code+50 if code+50 < 256 else 255 for code in color]
-            pygame.draw.rect(self.SCREEN, brighter_color, size)
+            pygame.draw.rect(self.SCREEN, brighter_color, rect)
 
             if click[0] == 1 and action is not None:
-                action()
+                if action_parameter is not None:
+                    action(action_parameter)
+                else:
+                    action()
 
         else:
-            pygame.draw.rect(self.SCREEN, color, size)
+            pygame.draw.rect(self.SCREEN, color, rect)
 
         textSurf, textRect = self._text_objects(text, self.SMALL_TEXT, self.WHITE)
-        textRect.center = ((size[0] + (size[2] / 2)), (size[1] + (size[3] / 2)))
+        textRect.center = ((rect[0] + (rect[2] / 2)), (rect[1] + (rect[3] / 2)))
         self.SCREEN.blit(textSurf, textRect)
 
     def _quitgame(self):
@@ -534,7 +534,19 @@ class ConnectFour:
 
     def player_move(self):
         """Human move"""
-        pass
+
+        valid_move = False
+        while not valid_move:
+            # Quit game by 'x' button
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self._quitgame()
+
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    x_position = event.pos[0]
+                    column = int(math.floor(x_position / self.SQUARESIZE))
+                    valid_move = self.make_a_move(column)
+
 
 if __name__ == '__main__':
     """Start Connect4 GUI"""
