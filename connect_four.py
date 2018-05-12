@@ -320,11 +320,17 @@ class ConnectFour:
     ######################
 
     def startgame(self):
-        """All initiations for GUI"""
+        """Initiates all class variables needed for GUI implementation to run.
+        The initiations are done here so there will be no PyGame interference while
+        using ConnectFour on console."""
 
         # Initiate PyGame
         pygame.init()
         pygame.display.set_caption('Connect4')
+
+        # Screen loop variables
+        self.intro = False
+        self.end = False
 
         # Color definitions for PyGame
         self.WHITE = (255, 255, 255)
@@ -334,8 +340,18 @@ class ConnectFour:
         self.RED = (255, 0, 0)
         self.YELLOW = (255, 255, 0)
 
-        # PyGame basic screen setup
+        # Mapping for player colors
+        self.PLAYER_COLOR = {
+            1: self.YELLOW,  # Player one token color
+            -1: self.RED,    # Player two token color
+            0: self.BLACK    # Empty field color
+        }
+
+        # Game field definitions
         self.SQUARESIZE = 100
+        self.CIRCLE_RADIUS = int(self.SQUARESIZE / 2 - 5)
+
+        # PyGame basic screen setup for Connect4
         self.WIDTH = 7 * self.SQUARESIZE
         self.HEIGHT = (6 + 1) * self.SQUARESIZE
         self.SCREEN = pygame.display.set_mode([self.WIDTH, self.HEIGHT])
@@ -345,6 +361,7 @@ class ConnectFour:
         self.SMALL_TEXT = pygame.font.Font("freesansbold.ttf", 20)
         self.CLOCK = pygame.time.Clock()
 
+        # Start game with the intro screen
         self.intro_screen()
 
     def intro_screen(self):
@@ -353,15 +370,20 @@ class ConnectFour:
         Inspired by PyGame tutorial 10 from Santex (Start Menu)
         """
 
-        intro = True
-        while intro:
+        # stop end screen loop if it is running
+        self.end = False
+
+        # start intro loop
+        self.intro = True
+
+        while self.intro_screen:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    self._quitgame()
+                    self.quitgame()
 
             self.SCREEN.fill(self.BLACK)
-            TextSurf, TextRect = self._text_objects("Connect4", self.LARGE_TEXT, self.BLUE)
-            TextRect.center = ((self.WIDTH/2), (self.HEIGHT/2))
+            TextSurf, TextRect = self.text_object("Connect4", self.LARGE_TEXT, self.WHITE)
+            TextRect.center = ((self.WIDTH/2), 100)
             self.SCREEN.blit(TextSurf, TextRect)
 
             # Keep track of the mouse
@@ -371,50 +393,94 @@ class ConnectFour:
             click = pygame.mouse.get_pressed()
 
             # Computer vs. Computer
-            self._button((250, 400, 150, 50), self.GRAY, "C. vs. C.", mouse, click, self.start_gui_game)
+            self.button((250, 200, 150, 50), self.GRAY, "E.vs.E.", mouse, click, self.start_gui_game)
 
             # Human vs. Computer
-            self._button((250, 475, 150, 50), self.GRAY, "P. vs. C.", mouse, click, self.start_gui_game, True)
+            self.button((250, 275, 150, 50), self.GRAY, "P.vs.E.", mouse, click, self.start_gui_game, ['pve'])
+
+            # Human vs. Human
+            self.button((250, 350, 150, 50), self.GRAY, "P.vs.P.", mouse, click, self.start_gui_game, ['pvp'])
 
             # Quit
-            self._button((250, 550, 150, 50), self.GRAY, "Quit", mouse, click, self._quitgame)
+            self.button((250, 425, 150, 50), self.GRAY, "Quit", mouse, click, self.quitgame)
 
             pygame.display.update()
             self.CLOCK.tick()
 
-    def start_gui_game(self, pve=False):
-        """Creates a view of Connect4 using PyGame.
+    def game_screen(self, mode):
+        """Plays a gui game
 
-        :param pve: Flag to determine if Player vs. Environment game.
+        This function was inspired by the Connect4 for Python tutorial by
+        Keith Galli (YouTube).
+
+        :param mode: Parameter to set the mode of the game. This can be one of:
+                        - eve: Environment vs. Environment
+                        - pve: Player vs. Environment
+                        - pvp: Player vs. Player
         """
-        self.reset_game()
-        self._draw_board()
-        self._play_gui_game(pve)
+        # Stop intro screen loop if still running
+        self.intro = False
+
+        eve = False
+        pve = False
+        pvp = False
+
+        # Set the Flag for pve or pvp
+        if mode == 'eve':
+            eve = True
+        elif mode == 'pve':
+            pve = True
+        elif mode == 'pvp':
+            pvp = True
+        else:
+            raise Exception("Unknown mode '{}' for GUI game!".format(mode))
+
+        # Game loop
+        while not self.game_finished:
+
+            for event in pygame.event.get():
+                # Quit game by 'x' button
+                if event.type == pygame.QUIT:
+                    self.quitgame()
+
+            if pvp or (pve and self.player == 1):
+                self.player_move()
+            else:
+                self.random_move()
+
+            # Update the game field
+            self.update_board()
+
+            if eve:
+                # Wait one second, that way it is easier to follow for observers
+                time.sleep(1)
+
+        if self.game_finished:
+            # Console output of who won the game
+            print("{} won the game!".format(self.symbols[self.player]))
+
+            # Game endscreen
+            self.end_screen()
 
     def end_screen(self):
         """End screen definition that shows the winner."""
 
-        end_screen = True
-
-        background_colors = {
-            'draw': self.WHITE,
-            'Y': self.YELLOW,
-            'R': self.RED
-        }
+        # Start end screen loop
+        self.end = True
 
         if self.is_draw:
-            background = background_colors['draw']
-            text = "DRAW"
+            text_color = self.WHITE
+            text = "DRAW!"
         else:
-            background = background_colors[self.symbols[self.player]]
+            text_color = self.PLAYER_COLOR[self.player]
             text = self.symbols[self.player] + " winns!"
 
-        while end_screen:
+        while self.end:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    self._quitgame()
+                    self.quitgame()
 
-            TextSurf, TextRect = self._text_objects(text, self.LARGE_TEXT, background)
+            TextSurf, TextRect = self.text_object(text, self.LARGE_TEXT, text_color)
             TextRect.center = ((self.WIDTH / 2), 55)
             self.SCREEN.blit(TextSurf, TextRect)
             pygame.display.update()
@@ -425,82 +491,65 @@ class ConnectFour:
             # Keep track of mouse action
             click = pygame.mouse.get_pressed()
 
-            self._button((590, 15, 100, 50), self.GRAY, "Back", mouse, click, self.intro_screen)
+            self.button((590, 15, 100, 50), self.GRAY, "Back", mouse, click, self.intro_screen)
 
             pygame.display.update()
             self.CLOCK.tick()
 
-    def _play_gui_game(self, pve=False):
-        """Plays a gui game
+    def quitgame(self):
+        """Helper function for quitting game."""
+        pygame.quit()
+        quit()
 
-        This function was inspired by the Connect4 for Python tutorial by
-        Keith Galli (YouTube).
+    def start_gui_game(self, mode='eve'):
+        """Creates a view of Connect4 using PyGame.
 
-        :param pve: Flag to determine if Player vs. Environment game.
+        :param mode: Parameter to set the mode of the game. This can be one of:
+                        - eve: Environment vs. Environment
+                        - pve: Player vs. Environment
+                        - pvp: Player vs. Player
         """
+        self.reset_game()
+        self.update_board()
+        self.game_screen(mode)
 
-        while not self.game_finished:
-
-            # Quit game by 'x' button
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self._quitgame()
-
-            # Make a random move
-            if pve and self.player == 1:
-                self.player_move()
-            else:
-                self.random_move()
-
-            # Update the game field
-            self._draw_board()
-
-            # Wait one second, that way it is easier to follow for observer
-            time.sleep(1)
-
-        if self.game_finished:
-            # Console output of who won the game
-            print("{} won the game!".format(self.symbols[self.player]))
-
-            # Game endscreen
-            self.end_screen()
-
-    def _draw_board(self):
+    def update_board(self):
         """Draws the game board
 
         This function was inspired by the Connect4 for Python tutorial by
         Keith Galli (YouTube).
         """
-        radius = int(self.SQUARESIZE / 2 - 5)
+        # Clear top row
+        pygame.draw.rect(self.SCREEN, self.BLACK, (0, 0, self.WIDTH, self.SQUARESIZE))
 
+        # Loop over columns and rows
         for c in range(7):
             for r in range(6):
-                # definition of a ractangle in the GUI
+                # definition of a ractangle and circle for the GUI
                 rectangle = (c * self.SQUARESIZE, r * self.SQUARESIZE + self.SQUARESIZE, self.SQUARESIZE, self.SQUARESIZE)
                 circle = (int(c * self.SQUARESIZE + self.SQUARESIZE / 2), int(r * self.SQUARESIZE + self.SQUARESIZE + self.SQUARESIZE / 2))
+
+                # Draw blue rectangles (represents the game field)
                 pygame.draw.rect(self.SCREEN, self.BLUE, rectangle)
-                if self.game_field[r][c] == 0:
-                    pygame.draw.circle(self.SCREEN, self.BLACK, circle, radius)
-                elif self.game_field[r][c] == 1:
-                    pygame.draw.circle(self.SCREEN, self.YELLOW, circle, radius)
-                else:
-                    pygame.draw.circle(self.SCREEN, self.RED, circle, radius)
+
+                # Draw circles to represent cell state
+                # Check self.PLAYER_COLOR for color schema
+                pygame.draw.circle(self.SCREEN, self.PLAYER_COLOR[self.game_field[r][c]], circle, self.CIRCLE_RADIUS)
 
         pygame.display.update()
 
-    def _text_objects(self, text, font, color):
+    def text_object(self, text, font, color):
         """Creates a text object for PyGame.
 
         :param text: The text that should be displayed.
         :param font: PyGame font to use for the text.
         :param color: The color of the text.
         """
-
         textSurface = font.render(text, True, color)
         return textSurface, textSurface.get_rect()
 
-    def _button(self, rect, color, text, mouse, click, action=None, action_parameter=None):
-        """Function to add buttons to the PyGame instance.
+    def button(self, rect, color, text, mouse, click, action=None, action_parameters=None):
+        """Function to wrap a simple way to create buttons using PyGame.
 
         :param rect: The size of the button (rectangle definition)
         :param color: The color to use for the button.
@@ -508,44 +557,71 @@ class ConnectFour:
         :param mouse: Keep track of mouse position
         :param click: Keep track of mouse action
         :param action: What should be the action to perform on a click.
+        :param action_parameters: List of values to pipe into action. Careful usage! Needs knowledge of called action!
         """
-
         if rect[0] + rect[2] > mouse[0] > rect[0] and rect[1] + rect[3] > mouse[1] > rect[1]:
+            # If the mouse is on the rectangle draw a brighter one
             brighter_color = [code+50 if code+50 < 256 else 255 for code in color]
             pygame.draw.rect(self.SCREEN, brighter_color, rect)
 
             if click[0] == 1 and action is not None:
-                if action_parameter is not None:
-                    action(action_parameter)
+                if action_parameters is not None:
+                    action(*action_parameters)
                 else:
                     action()
 
         else:
             pygame.draw.rect(self.SCREEN, color, rect)
 
-        textSurf, textRect = self._text_objects(text, self.SMALL_TEXT, self.WHITE)
+        textSurf, textRect = self.text_object(text, self.SMALL_TEXT, self.WHITE)
         textRect.center = ((rect[0] + (rect[2] / 2)), (rect[1] + (rect[3] / 2)))
         self.SCREEN.blit(textSurf, textRect)
 
-    def _quitgame(self):
-        """Helper function for quitting game."""
-        pygame.quit()
-        quit()
-
     def player_move(self):
-        """Human move"""
+        """Method for a player move. Shows the player a preview where the token would go on click
+        and handles placement."""
 
         valid_move = False
         while not valid_move:
-            # Quit game by 'x' button
+            # Keeping track of all events happening on the game screen
             for event in pygame.event.get():
+                # Quit game by 'x' button
                 if event.type == pygame.QUIT:
-                    self._quitgame()
+                    self.quitgame()
 
-                if event.type == pygame.MOUSEBUTTONDOWN:
+                # Player moves the mouse (token placement preview)
+                if event.type == pygame.MOUSEMOTION:
+                    # Clear top row
+                    pygame.draw.rect(self.SCREEN, self.BLACK, (0, 0, self.WIDTH, self.SQUARESIZE))
+
+                    # X position of mouse
                     x_position = event.pos[0]
+
+                    # Draw the right token color for the player on mouse position
+                    pygame.draw.circle(
+                        self.SCREEN,
+                        self.PLAYER_COLOR[self.player],
+                        (x_position, int(self.SQUARESIZE/2)),
+                        self.CIRCLE_RADIUS
+                    )
+                    # Update view
+                    pygame.display.update()
+
+                # Player presses the mouse button (puts a token)
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    # X position of mouse
+                    x_position = event.pos[0]
+
+                    # Rounded column number (0, 1, ..., 6)
                     column = int(math.floor(x_position / self.SQUARESIZE))
                     valid_move = self.make_a_move(column)
+
+                    # Clear top row
+                    pygame.draw.rect(self.SCREEN, self.BLACK, (0, 0, self.WIDTH, self.SQUARESIZE))
+
+                    # Update view
+                    pygame.display.update()
+
 
 
 if __name__ == '__main__':
