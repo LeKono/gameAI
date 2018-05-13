@@ -21,7 +21,15 @@ Check out the [project description](https://docs.google.com/viewer?a=v&pid=sites
 * Realize Connect4 similar to `tic-tac-toe.py`
 * Realize GUI with user input
 * Try to collect 'good move' statistics
-  
+
+### Presentation ###
+The presentations (at least for project 01) are held using Jupyter Notebook. To start
+the presentation just run:
+
+`jupyter nbconvert Presentation.ipynb --to slides --post serve`
+
+In the game_ai dictionary.
+
 ## Project 02 ##
 Check out the [Project description](https://docs.google.com/viewer?a=v&pid=sites&srcid=ZGVmYXVsdGRvbWFpbnxiaXRnYW1lYWl8Z3g6NmE4ZTEyNjNkZTQzNWVmYg).
 

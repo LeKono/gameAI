@@ -362,11 +362,12 @@ class TicTacToe:
         plt.title(label)
         plt.show()
 
-    def normalize_statistics(self, store_to_file=True, filename="normalized_data"):
+    def normalize_statistics(self, store_to_file=True, filename="normalized_data", print_normalization=False):y
         """Takes the data collected ins self.S_stats and normalizes it to 1.
 
         :param store_to_file: Determines if normalization should be stored into a JSON file.
         :param filename: Name of file to store the normalization in.
+        :param print_normalization: Flag that states if the normalized value list should be printed.
         """
         total = np.sum(self.S_stats)
         norm = []
@@ -381,6 +382,11 @@ class TicTacToe:
             'mapping': mapping,
             'p': norm
         }
+
+        if print_normalization:
+            print("Field\tNormalized value")
+            for index, p in enumerate(norm):
+                print("{}\t{}".format(index, p))
 
         if store_to_file:
             with open(filename+'.json', 'w') as outfile:
