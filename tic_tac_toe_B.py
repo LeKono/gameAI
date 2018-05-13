@@ -362,7 +362,7 @@ class TicTacToe:
         plt.title(label)
         plt.show()
 
-    def normalize_statistics(self, store_to_file=True, filename="normalized_data", print_normalization=False):y
+    def normalize_statistics(self, store_to_file=True, filename="normalized_data", print_normalization=False):
         """Takes the data collected ins self.S_stats and normalizes it to 1.
 
         :param store_to_file: Determines if normalization should be stored into a JSON file.
