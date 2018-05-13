@@ -251,10 +251,24 @@ class TicTacToe:
             self.game_stats[self.p] += 1
             return self.p
 
-    def reset_game(self):
-        """Resets the game for another round."""
+    def reset_game(self, total_reset=False):
+        """Resets the game for another round.
+
+        :param total_reset: Flag to completely reset the instance, this includes all collected data.
+        """
         self.S = np.zeros((3, 3), dtype=int)
         self.p = 1
+
+        if total_reset:
+            self.S_stats = np.zeros((3, 3), dtype=int)
+            self.game_stats = {
+                1: 0,
+                -1: 0,
+                0: 0
+            }
+            self.games_played = 0
+            self.tournaments_played = 0
+            self.probability_data = None
 
     def play_a_tournament(self, laps=1000, printing_modulo=100, random=True, x_player_method="p"):
         """Lets two computer players play a tournament.
