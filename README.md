@@ -57,10 +57,10 @@ run the code.
 ### The Team ###
 
 * Balci, Mehmet
-* BrÃ¼ggemann, Thomas
+* Brüggemann, Thomas
 * Ibhaluobe, David
 * Khan, Mohammad Asif Irfan
 * Konotopez, Andrej
-* Liu, Jeff
+* Liu, Zhuofan
 * Milchenski, Zdravko
 * Rahman, Mahfuzur
