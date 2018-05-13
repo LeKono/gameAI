@@ -340,7 +340,8 @@ class TicTacToe:
 
         :param label: Label to use on the plot.
         :param statistics: If some statistics where collected outside of the instance it can be passed using
-        this parameter. self.game_stats will be used otherwise.
+        this parameter. self.game_stats will be used otherwise. Should be a dict consisting of counts of wins and
+        draws like self.game_stats.
         """
         # Setup values for x and y axis
         x = []

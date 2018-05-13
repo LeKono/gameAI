@@ -2,6 +2,7 @@ import time
 import numpy as np
 import pygame
 import math
+import matplotlib.pyplot as plt
 
 
 class ConnectFour:
@@ -27,7 +28,14 @@ class ConnectFour:
         # Bool to determine if every move should be printed
         self.move_print = print_every_move
 
-        # Collect some basic information
+        # Basic game statistics
+        self.game_stats = {
+            1: 0,
+            -1: 0,
+            0: 0
+        }
+
+        # Statistics that may participate for good moves
         self.stats = {
             'used_columns': {i: 0 for i in range(0, 7)},
             'win_direction': {
@@ -282,13 +290,13 @@ class ConnectFour:
 
         return self.player, self.is_draw
 
-    def play_random_tournament(self, laps=1000, modulo=100):
+    def play_a_tournament(self, laps=1000, modulo=100):
         """Lets two NPC players play a random tournament.
 
         :param laps: determines how many laps should be played.
-        :param modulo: Modulo value for iteravive printing
+        :param modulo: Modulo value for iterative printing
         """
-        wins = {
+        tournament_statistics = {
             1: 0,   # Wins of player 1
             -1: 0,  # Wins of player -1
             0: 0    # Draws
@@ -297,23 +305,53 @@ class ConnectFour:
         for l in range(0, laps):
             winner, draw = self.play_a_game(winners_print=False)
             if draw:
-                wins[0] += 1
+                tournament_statistics[0] += 1
             else:
-                wins[winner] += 1
+                tournament_statistics[winner] += 1
             if not l % modulo:
                 print("=== Lap: {} ===\n'{}'\t{}\n'{}'\t{}\nDRAW\t{}".format(l,
                                                                              self.symbols[1],
-                                                                             wins[1],
+                                                                             tournament_statistics[1],
                                                                              self.symbols[-1],
-                                                                             wins[-1],
-                                                                             wins[0]))
+                                                                             tournament_statistics[-1],
+                                                                             tournament_statistics[0]))
             self.reset_game()
 
         print("Tournament results in: \n'{}'\t{}\n'{}'\t{}\nDRAW\t{}".format(self.symbols[1],
-                                                                             wins[1],
+                                                                             tournament_statistics[1],
                                                                              self.symbols[-1],
-                                                                             wins[-1],
-                                                                             wins[0]))
+                                                                             tournament_statistics[-1],
+                                                                             tournament_statistics[0]))
+
+        return tournament_statistics
+
+    def plot_bar(self, label="Connect4 Stats.", statistics=None):
+        """Plots a histogram using matplotlib
+
+        :param label: Label to use on the plot.
+        :param statistics: If some statistics where collected outside of the instance it can be passed using
+        this parameter. self.game_stats will be used otherwise. Should be a dict consisting of counts of wins and
+        draws like self.game_stats.
+        """
+        # Setup values for x and y axis
+        x = []
+        y = []
+
+        # If no statistics where given as parameter use self.game_stats
+        if statistics is None:
+            print("Setting stats to total")
+            statistics = self.game_stats
+
+        # Distribute keys and values to x and y lists
+        for key, value in statistics.items():
+            x.append(self.symbols[key] if self.symbols[key] != " " else "DRAW")
+            y.append(value)
+
+        plt.bar(x, y)
+        plt.xlabel("Outcome")
+        plt.ylabel("# of outcome")
+        plt.title(label)
+        plt.show()
 
     ######################
     # PyGame definitions #
@@ -473,7 +511,7 @@ class ConnectFour:
             text = "DRAW!"
         else:
             text_color = self.PLAYER_COLOR[self.player]
-            text = self.symbols[self.player] + " winns!"
+            text = self.symbols[self.player] + " wins!"
 
         while self.end:
             for event in pygame.event.get():
@@ -621,7 +659,6 @@ class ConnectFour:
 
                     # Update view
                     pygame.display.update()
-
 
 
 if __name__ == '__main__':
