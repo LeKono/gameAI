@@ -402,6 +402,14 @@ class TicTacToe:
         with open(filename+".json") as infile:
             self.probability_data = json.load(infile)
 
+    def build_game_tree(self):
+        """Builds the game tree for tic tac toe."""
+        pass
+
+    def print_game_tree(self):
+        """Prints the game tree to stdout."""
+        pass
+
 if __name__ == '__main__':
     """If the file is started from console it will work exactly like the original version."""
     ttt = TicTacToe()
