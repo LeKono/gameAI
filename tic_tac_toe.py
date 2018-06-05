@@ -1,7 +1,9 @@
 import json
-
+from copy import copy as cp
 import numpy as np
 import matplotlib.pyplot as plt
+
+from project_02.forest import Tree
 
 
 class TicTacToe:
@@ -33,15 +35,38 @@ class TicTacToe:
         # Variable to hold probabilities
         self.probability_data = None
 
-    def move_still_possible(self):
+    def move_still_possible(self, game_field=None):
         """Checks if a move is still possible."""
-        return not (self.S[self.S == 0].size == 0)
+        field = game_field if game_field is not None else self.S
 
-    def move_at_random(self):
-        """Make a random move."""
-        xs, ys = np.where(self.S == 0)
+        return not (field[field == 0].size == 0)
+
+    def move_at_random(self, game_field=None, moving_player=None):
+        """Make a random move.
+
+        :param game_field: Field to make the move on.
+        :param moving_player: Player to make the move.
+        """
+        field = game_field if game_field is not None else self.S
+        player = moving_player if moving_player is not None else self.p
+
+        xs, ys = np.where(field == 0)
         i = np.random.permutation(np.arange(xs.size))[0]
-        self.S[xs[i], ys[i]] = self.p
+        field[xs[i], ys[i]] = player
+
+    def move_specific(self, game_field, moving_player, position):
+        """Makes a move to a given field
+
+        :param game_field:
+        :param moving_player:
+        :param position: Position to move at i.e.: (x, y)
+        """
+        if game_field[position[0], position[1]] == 0:
+            game_field[position[0], position[1]] = moving_player
+
+            return True, game_field, moving_player
+        else:
+            return False
 
     def make_probability_move(self):
         """Makes a move based on the probability of a cell to be a winning candidate."""
@@ -129,25 +154,36 @@ class TicTacToe:
             # No move from strategy 1. or 2. so pick the cell with the highest winning contribution
             self.make_probability_move()
 
-    def move_was_winning_move(self):
-        """Checks if a move was a winning move."""
+    def move_was_winning_move(self, game_field=None, moving_player=None):
+        """Checks if a move was a winning move.
+
+        :param game_field: Field to make the move on.
+        :param moving_player: Player to make the move.
+        """
+
+        field = game_field if game_field is not None else self.S
+        player = moving_player if moving_player is not None else self.p
 
         game_won = False
 
-        if np.max((np.sum(self.S, axis=0)) * self.p) == 3:
-            self._update_stats("v")
+        if np.max((np.sum(field, axis=0)) * player) == 3:
+            if game_field is None:
+                self._update_stats("v")
             game_won = True
 
-        if np.max((np.sum(self.S, axis=1)) * self.p) == 3:
-            self._update_stats("h")
+        if np.max((np.sum(field, axis=1)) * player) == 3:
+            if game_field is None:
+                self._update_stats("h")
             game_won = True
 
-        if (np.sum(np.diag(self.S)) * self.p) == 3:
-            self._update_stats("d")
+        if (np.sum(np.diag(field)) * player) == 3:
+            if game_field is None:
+                self._update_stats("d")
             game_won = True
 
-        if (np.sum(np.diag(np.rot90(self.S))) * self.p) == 3:
-            self._update_stats("i")
+        if (np.sum(np.diag(np.rot90(field))) * player) == 3:
+            if game_field is None:
+                self._update_stats("i")
             game_won = True
 
         return game_won
@@ -402,9 +438,55 @@ class TicTacToe:
         with open(filename+".json") as infile:
             self.probability_data = json.load(infile)
 
-    def build_game_tree(self):
+    def build_game_tree(self, game_field, moving_player):
         """Builds the game tree for tic tac toe."""
-        pass
+        # 1. cp
+        # 2.
+        win = {
+            1: 0,
+            -1: 0
+        }
+        draw = 0
+        branches = 0
+        states = 0
+
+        prev_player = moving_player*-1
+
+        if not self.move_was_winning_move(game_field, prev_player):
+            if self.move_still_possible(game_field):
+
+                # Node with children is a state
+                states += 1
+
+                # Copy field and player ??
+                cp_S = cp(game_field)
+                cp_p = cp(moving_player)
+
+                #t = Tree()
+
+                xs, ys = np.where(cp_S == 0)
+
+                # Count branches (children)
+                branches += xs.size
+
+                for i in range(0, xs.size):
+                    _, new_S, player = self.move_specific(cp(cp_S), cp_p, (xs[i], ys[i]))
+                    sub_results = self.build_game_tree(new_S, player*-1)
+
+                    win[1] += sub_results[0][1]
+                    win[-1] += sub_results[0][-1]
+                    draw += sub_results[1]
+                    branches += sub_results[2]
+                    states += sub_results[3]
+
+            else:
+                draw += 1
+
+        else:
+            win[prev_player] += 1
+
+        return win, draw, branches, states
+
 
     def print_game_tree(self):
         """Prints the game tree to stdout."""
