@@ -62,6 +62,21 @@ class Node:
 
         return sub_tree
 
+    def get_mmv(self, minmax=1):
+        mmd = {
+            1: max,
+            -1: min
+        }
+        value = self.value
+        if len(self.children) > 0:
+            vl = []
+            for child in self.children:
+                vl.append(child.get_mmv(minmax*-1))
+
+            value = mmd[minmax](vl)
+
+        return value
+
     def __str__(self):
         """Overwriting to string"""
         return "('{}'-> {})".format(self.label, self.value)
