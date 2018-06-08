@@ -7,13 +7,21 @@ import matplotlib.pyplot as plt
 
 class ConnectFour:
 
-    def __init__(self, print_every_move=False):
-        """Setup a fresh game of connect four"""
+    def __init__(self, x_size=7, y_size=6, print_every_move=False):
+        """Setup a fresh game of connect four
+
+        :param x_size: Sets up the x axis length for the game field.
+        :param y_size: Sets up the y axis length for the game field.
+        """
+
+        self.y_size = y_size
+        self.x_size = x_size
+
         # Game field initialization
-        self.game_field = np.zeros((6, 7), dtype=int)
+        self.game_field = np.zeros((self.y_size, self.x_size), dtype=int)
 
         # Helper dict to keep track of played tokens
-        self.offset = {c: 5 for c in range(0, 7)}
+        self.offset = {c: 5 for c in range(0, self.y_size+1)}
 
         # Symbol mapping
         self.symbols = {1: 'Y', -1: 'R', 0: ' '}
@@ -37,7 +45,7 @@ class ConnectFour:
 
         # Statistics that may participate for good moves
         self.stats = {
-            'used_columns': {i: 0 for i in range(0, 7)},
+            'used_columns': {i: 0 for i in range(0, self.y_size+1)},
             'win_direction': {
                 'h': 0,
                 'v': 0,
@@ -55,12 +63,12 @@ class ConnectFour:
 
         self.player_stats = {
             1: {
-                'used_columns': {i: 0 for i in range(0, 7)},
+                'used_columns': {i: 0 for i in range(0, self.y_size+1)},
                 'turns_played': 0,
                 'move_hist': []
             },
             -1: {
-                'used_columns': {i: 0 for i in range(0, 7)},
+                'used_columns': {i: 0 for i in range(0, self.y_size+1)},
                 'turns_played': 0,
                 'move_hist': []
             },
@@ -71,7 +79,7 @@ class ConnectFour:
 
         :param column: Column to put the token
         """
-        if column in range(0, 7):
+        if column in range(0, self.y_size+1):
             return self.offset[column] >= 0
         else:
             return False
@@ -81,62 +89,8 @@ class ConnectFour:
 
         :param column: Column to put the token
         """
-        row = self.offset[column]
 
-        # Setup directions that may contain tokens
-        right = True if column < 6 else False
-        left = True if column > 0 else False
-        up = True if row > 0 else False
-        down = True if row < 5 else False
-
-        tokens = {
-            'r': 0,
-            'l': 0,
-            'd': 0,
-            'ru': 0,
-            'rd': 0,
-            'lu': 0,
-            'ld': 0
-        }
-        results = []
-
-        # Check Right
-        if right:
-            tokens['r'] += self._token_count(row, column+1, horizontal_transit=1)
-            results.append(tokens['r'] + 1)
-
-        # Check left
-        if left:
-            tokens['l'] = self._token_count(row, column-1, horizontal_transit=-1)
-            results.append(tokens['l'] + 1)
-            results.append(tokens['r'] + tokens['l'] + 1)
-
-        # Check down
-        if down:
-            tokens['d'] = self._token_count(row+1, column, vertical_transit=1)
-            results.append(tokens['d'] + 1)
-
-        # Check Top-Right
-        if right and up:
-            tokens['ru'] = self._token_count(row-1, column+1, vertical_transit=-1, horizontal_transit=+1)
-            results.append(tokens['ru'] + 1)
-
-        # Check Top-Left
-        if left and up:
-            tokens['lu'] = self._token_count(row-1, column-1, vertical_transit=-1, horizontal_transit=-1)
-            results.append(tokens['lu'] + 1)
-
-        # Check Bottom-Right
-        if right and down:
-            tokens['rd'] = self._token_count(row+1, column+1, vertical_transit=1, horizontal_transit=1)
-            results.append(tokens['rd'] + 1)
-            results.append(tokens['lu'] + tokens['rd'] + 1)
-
-        # Check Bottom-Left
-        if left and down:
-            tokens['ld'] = self._token_count(row+1, column-1, vertical_transit=1, horizontal_transit=-1)
-            results.append(tokens['ld'] + 1)
-            results.append(tokens['ru'] + tokens['ld'] + 1)
+        results = self.check_all_directions(column=column)
 
         if max(results) >= 4:
             i = results.index(max(results))
@@ -157,25 +111,204 @@ class ConnectFour:
         else:
             return False
 
-    def _token_count(self, row, column, vertical_transit=0, horizontal_transit=0):
+    def check_all_directions(self, column, row=None, target_player=None):
+        """Calls the value calculation for a given token."""
+
+        actual_game = False if target_player is not None else True
+        row = row if row is not None else self.offset[column]
+
+        # Setup directions that may contain tokens
+        right = True if column < self.x_size - 1 else False
+        left = True if column > 0 else False
+        up = True if row > 0 else False
+        down = True if row < self.y_size - 1 else False
+
+        tokens = {
+            'r': 0,
+            'l': 0,
+            'd': 0,
+            'ru': 0,
+            'rd': 0,
+            'lu': 0,
+            'ld': 0
+        }
+        token_values = {
+            'r': [],
+            'l': [],
+            'rl': [],
+            'd': [],
+            'u': [],
+            'du': [],
+            'ru': [],
+            'ld': [],
+            'ruld': [],
+            'rd': [],
+            'lu': [],
+            'rdlu': []
+        }
+        results = []
+
+        # Check Right
+        if right:
+            count, value, free = self._token_count(row, column + 1, horizontal_transit=1, target_player=target_player)
+            tokens['r'] += count
+
+            # right calculation data
+            if not actual_game:
+                token_values['r'].append(value)
+                token_values['r'].append(free)
+                token_values['r'].append(10**(value+1)+free)
+
+            results.append(tokens['r'] + 1)
+
+        # Check left
+        if left:
+            count, value, free = self._token_count(row, column - 1, horizontal_transit=-1, target_player=target_player)
+            tokens['l'] = count
+
+            if not actual_game:
+                token_values['l'].append(value)
+                token_values['l'].append(free)
+                token_values['l'].append(10 ** (value + 1) + free)
+
+                if len(token_values['r']) > 0:
+                    token_values['rl'].append(token_values['r'][0] + value)
+                    token_values['rl'].append(token_values['r'][1] + free)
+                    token_values['rl'].append(10**(token_values['r'][0] + value + 1) + token_values['r'][1] + free)
+
+            results.append(tokens['l'] + 1)
+            results.append(tokens['r'] + tokens['l'] + 1)
+
+        # Check down
+        if down:
+            count, value, free = self._token_count(row + 1, column, vertical_transit=1, target_player=target_player)
+            tokens['d'] = count
+
+            if not actual_game:
+                token_values['d'].append(value)
+                token_values['d'].append(free)
+                token_values['d'].append(10**(value+1) + free)
+
+            results.append(tokens['d'] + 1)
+
+        # Check Top-Right
+        if right and up:
+            count, value, free = self._token_count(row - 1, column + 1, vertical_transit=-1, horizontal_transit=+1, target_player=target_player)
+            tokens['ru'] = count
+
+            if not actual_game:
+                token_values['ru'].append(value)
+                token_values['ru'].append(free)
+                token_values['ru'].append(10**(value+1) + free)
+
+            results.append(tokens['ru'] + 1)
+
+        # Check Top-Left
+        if left and up:
+            count, value, free = self._token_count(row - 1, column - 1, vertical_transit=-1, horizontal_transit=-1, target_player=target_player)
+            tokens['lu'] = count
+
+            if not actual_game:
+                token_values['lu'].append(value)
+                token_values['lu'].append(free)
+                token_values['lu'].append(10**(value+1) + free)
+
+            results.append(tokens['lu'] + 1)
+
+        # Check Bottom-Right
+        if right and down:
+            count, value, free = self._token_count(row + 1, column + 1, vertical_transit=1, horizontal_transit=1, target_player=target_player)
+            tokens['rd'] = count
+
+            if not actual_game:
+                token_values['rd'].append(value)
+                token_values['rd'].append(free)
+                token_values['rd'].append(10**(value+1) + free)
+
+                if len(token_values['lu']) > 0:
+                    token_values['rdlu'].append(token_values['lu'][0] + value)
+                    token_values['rdlu'].append(token_values['lu'][1] + free)
+                    token_values['rdlu'].append(10 ** (token_values['lu'][0] + value + 1) + token_values['lu'][1] + free)
+
+            results.append(tokens['rd'] + 1)
+            results.append(tokens['lu'] + tokens['rd'] + 1)
+
+        # Check Bottom-Left
+        if left and down:
+            count, value, free = self._token_count(row + 1, column - 1, vertical_transit=1, horizontal_transit=-1, target_player=target_player)
+            tokens['ld'] = count
+
+            if not actual_game:
+                token_values['ld'].append(value)
+                token_values['ld'].append(free)
+                token_values['ld'].append(10**(value+1) + free)
+
+                if len(token_values['ru']) > 0:
+                    token_values['ruld'].append(token_values['ru'][0] + value)
+                    token_values['ruld'].append(token_values['ru'][1] + free)
+                    token_values['ruld'].append(10 ** (token_values['ru'][0] + value + 1) + token_values['ru'][1] + free)
+
+            results.append(tokens['ld'] + 1)
+            results.append(tokens['ru'] + tokens['ld'] + 1)
+
+        if not actual_game and up:
+            count, value, free = self._token_count(row - 1, column, vertical_transit=-1, target_player=target_player)
+
+            token_values['u'].append(value)
+            token_values['u'].append(free)
+            token_values['u'].append(10**(value+1) + free)
+
+            if len(token_values['d']) > 0:
+                token_values['du'].append(token_values['d'][0] + value)
+                token_values['du'].append(token_values['d'][1] + free)
+                token_values['du'].append(10 ** (token_values['d'][0] + value + 1) + token_values['d'][1] + free)
+
+        return results if target_player is None else token_values
+
+    def _token_count(self, row, column, vertical_transit=0, horizontal_transit=0, target_player=None):
         """Helper function that counts tokens.
 
         :param row: Row to start counting.
         :param column: Column to start counting.
         :param vertical_transit: Transition value for a vertical transition.
         :param horizontal_transit: Transition value for a horizontal transition.
+        :param target_player: Determines for which player the value should be calculated.
 
         :returns: An int value of counted tokens (in line)"""
         count = 0
-        while True:
-            if row in range(0, 6) and column in range(0, 7) and self.game_field[row][column] == self.player:
-                count += 1
-                column += horizontal_transit
-                row += vertical_transit
+        connected = True
+        value = 0
+        free_fields = 0
+
+        actual_game = False if target_player is not None else True
+        target_player = target_player if target_player is not None else self.player
+
+        for i in range(0, 3):
+            if row in range(0, self.y_size) and column in range(0, self.x_size):
+                if self.game_field[row][column] == target_player:
+                    value += 1
+
+                    if connected:
+                        count += 1
+
+                    column += horizontal_transit
+                    row += vertical_transit
+
+                elif not actual_game and self.game_field[row][column] == 0:
+                    # Free field
+                    connected = False
+                    free_fields += 1
+                    column += horizontal_transit
+                    row += vertical_transit
+
+                else:
+                    # Next field is occupied by other Player so break
+                    break
             else:
+                # Out of range.
                 break
 
-        return count
+        return count, value, free_fields
 
     def make_a_move(self, column):
         """Put a token into a column
@@ -352,6 +485,37 @@ class ConnectFour:
         plt.ylabel("# of outcome")
         plt.title(label)
         plt.show()
+
+    def get_state_value(self, game_state):
+        """Calculates value of a given state.
+
+        :param game_state: Configuration of game field that a value should be calculated for.
+
+        :return: Y-value + R-value
+        """
+
+        # All fields occupied by player Y
+        Yxs, Yys = np.where(game_state == 1)
+        Y_value = 0
+        for i in range(0, Yxs.size):
+            Y_tokens = self.check_all_directions(column=Yys[i], row=Yxs[i], target_player=1)
+            print("Y_tokens:\n", Y_tokens)
+            for key, data in Y_tokens.items():
+                if sum(data[:2]) > 2:
+                    Y_value += data[2]
+
+        # All fields occupied by player R
+        Rxs, Rys = np.where(game_state == -1)
+        R_value = 0
+        for i in range(0, Rxs.size):
+            R_tokens = self.check_all_directions(column=Rys[i], row=Rxs[i], target_player=-1)
+            print("R_tokens:\n", R_tokens)
+            for key, data in R_tokens.items():
+                if sum(data[:2]) > 2:
+                    R_value += data[2]
+
+        return Y_value, R_value
+
 
     ######################
     # PyGame definitions #

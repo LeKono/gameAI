@@ -487,7 +487,6 @@ class TicTacToe:
 
         return win, draw, branches, states
 
-
     def print_game_tree(self):
         """Prints the game tree to stdout."""
         pass
