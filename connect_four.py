@@ -4,6 +4,7 @@ import pygame
 import math
 import matplotlib.pyplot as plt
 
+from project_02.forest import Tree
 
 class ConnectFour:
 
@@ -73,6 +74,9 @@ class ConnectFour:
                 'move_hist': []
             },
         }
+
+        # Tree for move prediction
+        self.move_tree = None
 
     def move_allowed(self, column):
         """Checks if a move is allowed
@@ -486,35 +490,51 @@ class ConnectFour:
         plt.title(label)
         plt.show()
 
-    def get_state_value(self, game_state):
+    def get_state_value(self, game_state, print_direction_values=False):
         """Calculates value of a given state.
 
         :param game_state: Configuration of game field that a value should be calculated for.
+        :param print_direction_values: Flag to print the distinct values that are combined to Y_ and R_value.
 
         :return: Y-value + R-value
         """
 
         # All fields occupied by player Y
-        Yxs, Yys = np.where(game_state == 1)
+        Yys, Yxs = np.where(game_state == 1)
         Y_value = 0
         for i in range(0, Yxs.size):
-            Y_tokens = self.check_all_directions(column=Yys[i], row=Yxs[i], target_player=1)
-            print("Y_tokens:\n", Y_tokens)
+            Y_tokens = self.check_all_directions(column=Yxs[i], row=Yys[i], target_player=1)
+            if print_direction_values:
+                print("Y_tokens ({}, {}):\n{}".format(Yxs[i], Yys[i], Y_tokens))
             for key, data in Y_tokens.items():
                 if sum(data[:2]) > 2:
                     Y_value += data[2]
 
         # All fields occupied by player R
-        Rxs, Rys = np.where(game_state == -1)
+        Rys, Rxs = np.where(game_state == -1)
         R_value = 0
         for i in range(0, Rxs.size):
-            R_tokens = self.check_all_directions(column=Rys[i], row=Rxs[i], target_player=-1)
-            print("R_tokens:\n", R_tokens)
+            R_tokens = self.check_all_directions(column=Rxs[i], row=Rys[i], target_player=-1)
+            if print_direction_values:
+                print("R_tokens ({}, {}):\n{}".format(Rxs[i], Rys[i], Y_tokens))
             for key, data in R_tokens.items():
                 if sum(data[:2]) > 2:
                     R_value += data[2]
 
-        return Y_value, R_value
+        return Y_value - R_value
+
+    def move_tree_data(self, depth=2):
+        """Builds or updates a Tree for MinMax algorithm.
+
+        :param depth: Determines the max depth of the tree.
+        """
+        if self.move_tree is None:
+            # Build a new tree
+            self.move_tree = Tree()
+            pass
+        else:
+            # There is already a tree. Update the levels
+            pass
 
 
     ######################

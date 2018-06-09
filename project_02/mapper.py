@@ -48,7 +48,10 @@ class Map:
     # Translate to networkX
 
     def show_map(self, grid_map=None):
-        """Prints out the array of the map."""
+        """Prints out the array of the map.
+
+        :param grid_map: Grid-Map that should be drawn.
+        """
         grid_map = grid_map if grid_map is not None else self.m
         for r in grid_map:
             rp = ""

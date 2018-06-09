@@ -440,8 +440,7 @@ class TicTacToe:
 
     def build_game_tree(self, game_field, moving_player):
         """Builds the game tree for tic tac toe."""
-        # 1. cp
-        # 2.
+
         win = {
             1: 0,
             -1: 0
