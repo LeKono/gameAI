@@ -510,6 +510,9 @@ class ConnectFour:
                 if sum(data[:2]) > 2:
                     Y_value += data[2]
 
+        if print_direction_values:
+            print("Y-Value: {}".format(Y_value))
+
         # All fields occupied by player R
         Rys, Rxs = np.where(game_state == -1)
         R_value = 0
@@ -520,6 +523,9 @@ class ConnectFour:
             for key, data in R_tokens.items():
                 if sum(data[:2]) > 2:
                     R_value += data[2]
+
+        if print_direction_values:
+            print("R-Value: {}".format(R_value))
 
         return Y_value - R_value
 

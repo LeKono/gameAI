@@ -1,9 +1,9 @@
 
 class Tree:
-    def __init__(self, label='root', value=None):
+    def __init__(self, root_label='root', value=None):
         """A basic non binary tree class. It creates a root node that may
         have other trees as children."""
-        self.root = Node(label=label, value=value)
+        self.root = Node(label=root_label, value=value)
         self.tree_map = {}
 
     def build_map(self, max_depth=None):
@@ -27,10 +27,6 @@ class Node:
         # Label and value for THIS node
         self.label = label
         self.value = value
-
-    def calculate_MMV(self):
-        """Calculates the min-max value from the point of view of this node."""
-        pass
 
     def add_child(self, label='Node', value=None):
         """Adds a child node to the tree.
@@ -62,18 +58,36 @@ class Node:
 
         return sub_tree
 
-    def get_mmv(self, minmax=1):
+    def calculate_mmv(self, minmax=1, update=True):
+        """Determines the MinMaxValue for this node.
+
+        :param minmax: Determines if next level should be searched for max or min. Set to 1 for max and to -1 for min.
+        :param update: Flag if a given node value should be updated by looking on its childrens values.
+
+        :returns: Value of this node.
+        """
         mmd = {
             1: max,
             -1: min
         }
+
+        had_no_value = True if self.value is None else False
+
+        # Value of this node
         value = self.value
-        if len(self.children) > 0:
+
+        # Loop over the list of children
+        if not had_no_value and update and len(self.children) > 0:
+            # Value list for children
             vl = []
             for child in self.children:
-                vl.append(child.get_mmv(minmax*-1))
+                vl.append(child.calculate_mmv(minmax * -1))
 
+            # Take the Min / Max value (depends on level of tree)
             value = mmd[minmax](vl)
+
+        if had_no_value:
+            self.value = value
 
         return value
 
