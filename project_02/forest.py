@@ -10,6 +10,16 @@ class Tree:
         """Builds the tree map"""
         self.tree_map[self.root.label] = self.root.get_sub_tree(max_depth)
 
+    def calculate_mmv(self, minmax=1, update=True):
+        """Min max calculation using same function from Node.
+
+        :param minmax: Determines if next level should be searched for max or min. Set to 1 for max and to -1 for min.
+        :param update: Flag if a given node value should be updated by looking on its childrens values.
+
+        :returns: Value of this tree.
+        """
+        return self.root.calculate_mmv(minmax=minmax, update=update)
+
 
 class Node:
     def __init__(self, nid=0, label='root', value=None):
@@ -39,9 +49,11 @@ class Node:
         self.children.append(Node(nid, label, value))
 
     def get_sub_tree(self, max_depth=None):
-        """Gives the subtree information for this node.
+        """Gives a subtree of this node as dict.
 
         :param max_depth: States how deep the algorithm should look.
+
+        :returns: SubTree dict.
         """
         sub_tree = {'v': self.value}
         if len(self.children) > 0:
@@ -75,21 +87,22 @@ class Node:
 
         # Value of this node
         value = self.value
+        child = self.label
 
-        # Loop over the list of children
-        if not had_no_value and update and len(self.children) > 0:
-            # Value list for children
-            vl = []
-            for child in self.children:
-                vl.append(child.calculate_mmv(minmax * -1))
+        # Loop over the list of children not had_no_value and update and
+        if len(self.children) > 0:
+            if update or self.value is None:
+                # Value list for children
+                vl = []
+                for child in self.children:
+                    vl.append(child.calculate_mmv(minmax=minmax * -1, update=update)[0])
 
-            # Take the Min / Max value (depends on level of tree)
-            value = mmd[minmax](vl)
+                # Take the Min / Max value (depends on level of tree)
+                value = mmd[minmax](vl)
+                child = vl.index(value)
+                self.value = value
 
-        if had_no_value:
-            self.value = value
-
-        return value
+        return value, child
 
     def __str__(self):
         """Overwriting to string"""

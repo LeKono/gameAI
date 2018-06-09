@@ -4,7 +4,9 @@ import pygame
 import math
 import matplotlib.pyplot as plt
 
-from project_02.forest import Tree
+from copy import deepcopy as dcp
+
+from project_02.forest import Tree, Node
 
 class ConnectFour:
 
@@ -22,7 +24,7 @@ class ConnectFour:
         self.game_field = np.zeros((self.y_size, self.x_size), dtype=int)
 
         # Helper dict to keep track of played tokens
-        self.offset = {c: 5 for c in range(0, self.y_size+1)}
+        self.offset = {c: 5 for c in range(0, self.x_size)}
 
         # Symbol mapping
         self.symbols = {1: 'Y', -1: 'R', 0: ' '}
@@ -46,7 +48,7 @@ class ConnectFour:
 
         # Statistics that may participate for good moves
         self.stats = {
-            'used_columns': {i: 0 for i in range(0, self.y_size+1)},
+            'used_columns': {i: 0 for i in range(0, self.x_size)},
             'win_direction': {
                 'h': 0,
                 'v': 0,
@@ -64,27 +66,26 @@ class ConnectFour:
 
         self.player_stats = {
             1: {
-                'used_columns': {i: 0 for i in range(0, self.y_size+1)},
+                'used_columns': {i: 0 for i in range(0, self.x_size)},
                 'turns_played': 0,
                 'move_hist': []
             },
             -1: {
-                'used_columns': {i: 0 for i in range(0, self.y_size+1)},
+                'used_columns': {i: 0 for i in range(0, self.x_size)},
                 'turns_played': 0,
                 'move_hist': []
             },
         }
 
-        # Tree for move prediction
-        self.move_tree = None
+        self.game_tree = None
 
     def move_allowed(self, column):
         """Checks if a move is allowed
 
         :param column: Column to put the token
         """
-        if column in range(0, self.y_size+1):
-            return self.offset[column] >= 0
+        if column in range(0, self.x_size):
+            return self.offset[column] > -1
         else:
             return False
 
@@ -357,7 +358,7 @@ class ConnectFour:
         """Makes a random move."""
         valid_move = False
         while not valid_move:
-            valid_move = self.make_a_move(np.random.randint(0, 7))
+            valid_move = self.make_a_move(np.random.randint(0, self.x_size))
 
     def print_game_field(self):
         """Method that prints the game field."""
@@ -368,19 +369,19 @@ class ConnectFour:
 
     def reset_game(self):
         """Resets the game state."""
-        self.game_field = np.zeros((6, 7), dtype=int)
-        self.offset = {c: 5 for c in range(0, 7)}
+        self.game_field = np.zeros((self.y_size, self.x_size), dtype=int)
+        self.offset = {c: 5 for c in range(0, self.x_size)}
         self.player = 1
         self.game_finished = False
         self.is_draw = False
         self.player_stats = {
             1: {
-                'used_columns': {i: 0 for i in range(0, 7)},
+                'used_columns': {i: 0 for i in range(0, self.x_size)},
                 'turns_played': 0,
                 'move_hist': []
             },
             -1: {
-                'used_columns': {i: 0 for i in range(0, 7)},
+                'used_columns': {i: 0 for i in range(0, self.x_size)},
                 'turns_played': 0,
                 'move_hist': []
             },
@@ -498,10 +499,13 @@ class ConnectFour:
 
         :return: Y-value + R-value
         """
-
+        if print_direction_values:
+            print("\n=====\n[INFO] Starting direction calculations ... \n=====\n")
+            print(game_state, "\n")
         # All fields occupied by player Y
         Yys, Yxs = np.where(game_state == 1)
         Y_value = 0
+
         for i in range(0, Yxs.size):
             Y_tokens = self.check_all_directions(column=Yxs[i], row=Yys[i], target_player=1)
             if print_direction_values:
@@ -511,11 +515,12 @@ class ConnectFour:
                     Y_value += data[2]
 
         if print_direction_values:
-            print("Y-Value: {}".format(Y_value))
+            print("\n>>>> Y-Value: {}\n".format(Y_value))
 
         # All fields occupied by player R
         Rys, Rxs = np.where(game_state == -1)
         R_value = 0
+
         for i in range(0, Rxs.size):
             R_tokens = self.check_all_directions(column=Rxs[i], row=Rys[i], target_player=-1)
             if print_direction_values:
@@ -525,22 +530,95 @@ class ConnectFour:
                     R_value += data[2]
 
         if print_direction_values:
-            print("R-Value: {}".format(R_value))
+            print("\n>>>> R-Value: {}\n".format(R_value))
 
         return Y_value - R_value
 
-    def move_tree_data(self, depth=2):
+    def move_tree_data(self, game_state, offset, player, root=None, depth=2):
         """Builds or updates a Tree for MinMax algorithm.
 
+        :param game_state: Configuration of game field that a subtree should be created for.
+        :param offset: The field offset of the game_field (simulates gravity of Connect4 board).
+        :param player: The player whos turn it is.
+        :param root: The 'root' node of the subtree (a node in the tree).
         :param depth: Determines the max depth of the tree.
         """
-        if self.move_tree is None:
+
+        if root is None:
             # Build a new tree
-            self.move_tree = Tree()
-            pass
+            tree = Tree()
+            root = tree.root
+
+        if len(root.children) == 0:
+            # There are no children so new moves need to be generated
+            for column in range(0, self.x_size):
+                if self.move_allowed(column):
+
+                    # Preset node_label
+                    node_label = column
+
+                    # Determine if the move wins the game
+                    winning_move = self.winning_move(column)
+
+                    # Pretend a move
+                    game_state[offset[column]][column] = player
+                    offset[column] -= 1
+
+                    if winning_move or depth == 0:
+                        # If the new node is a winning move just append and continue
+                        root.add_child(label=node_label,
+                                       value=self.get_state_value(game_state=game_state))#, print_direction_values=True))
+
+                    elif depth > 0:
+                        # If the new node was not a winning move go ahead and build the sub_tree
+                        sub_tree = self.move_tree_data(game_state=game_state,
+                                                       offset=offset,
+                                                       player=player*-1,
+                                                       root=Node(label=node_label),
+                                                       depth=depth-1)
+
+                        root.children.append(sub_tree)
+
+                    else:
+                        raise Exception("Oh no... tree construction failed oO \n \
+                        [winning_move: {}, depth: {}]".format(winning_move, depth))
+
+                    # Revert the move
+                    offset[column] += 1
+                    game_state[offset[column]][column] = 0
         else:
-            # There is already a tree. Update the levels
-            pass
+            for i, child in enumerate(root.children):
+                root.children[i] = self.move_tree_data(game_state=game_state,
+                                                       offset=offset,
+                                                       player=player*-1,
+                                                       root=child,
+                                                       depth=depth-1)
+        return root
+
+    def make_mmv_move(self, player=1, max_depth=2, print_info=False):
+        """Suggests a column based on minmax search.
+
+        :param max_depth: Determines the maximal depth of the subtree used for MMV.
+        :param print_info: Flag to print which column was picked and what value it had.
+        """
+        if print_info:
+            print("[INFO] Starting MMV move calculations ... ")
+
+        # Tree for move prediction
+        self.game_tree = self.move_tree_data(
+            game_state=dcp(self.game_field),
+            offset=dcp(self.offset),
+            player=self.player,
+            root=None,
+            depth=max_depth)
+
+        value, column = self.game_tree.calculate_mmv(minmax=player)
+        #self.game_tree = self.game_tree.children[column]
+
+        if print_info:
+            print("[INFO] MMV decided for column '{}' with a value of '{}'.".format(column, value))
+
+        self.make_a_move(column)
 
 
     ######################
@@ -623,14 +701,23 @@ class ConnectFour:
             # Computer vs. Computer
             self.button((250, 200, 150, 50), self.GRAY, "E.vs.E.", mouse, click, self.start_gui_game)
 
+            # Computer vs. MMV-Computer
+            self.button((250, 275, 150, 50), self.GRAY, "E. vs. MMV.", mouse, click, self.start_gui_game, ['evm'])
+
             # Human vs. Computer
-            self.button((250, 275, 150, 50), self.GRAY, "P.vs.E.", mouse, click, self.start_gui_game, ['pve'])
+            self.button((250, 350, 150, 50), self.GRAY, "P.vs.E.", mouse, click, self.start_gui_game, ['pve'])
+
+            # Human vs. MMV-Computer
+            self.button((250, 425, 150, 50), self.GRAY, "P. vs. MMV.", mouse, click, self.start_gui_game, ['pvm'])
+
+            # MMV-Computer vs. MMV-Computer
+            self.button((250, 500, 150, 50), self.GRAY, "MMV.vs.MMV.", mouse, click, self.start_gui_game, ['mvm'])
 
             # Human vs. Human
-            self.button((250, 350, 150, 50), self.GRAY, "P.vs.P.", mouse, click, self.start_gui_game, ['pvp'])
+            self.button((250, 575, 150, 50), self.GRAY, "P.vs.P.", mouse, click, self.start_gui_game, ['pvp'])
 
             # Quit
-            self.button((250, 425, 150, 50), self.GRAY, "Quit", mouse, click, self.quitgame)
+            #self.button((250, 575, 150, 50), self.GRAY, "Quit", mouse, click, self.quitgame)
 
             pygame.display.update()
             self.CLOCK.tick()
@@ -649,19 +736,12 @@ class ConnectFour:
         # Stop intro screen loop if still running
         self.intro = False
 
-        eve = False
-        pve = False
-        pvp = False
-
-        # Set the Flag for pve or pvp
-        if mode == 'eve':
-            eve = True
-        elif mode == 'pve':
-            pve = True
-        elif mode == 'pvp':
-            pvp = True
-        else:
-            raise Exception("Unknown mode '{}' for GUI game!".format(mode))
+        eve = True if mode == 'eve' else False
+        evm = True if mode == 'evm' else False
+        pve = True if mode == 'pve' else False
+        pvp = True if mode == 'pvp' else False
+        pvm = True if mode == 'pvm' else False
+        mvm = True if mode == 'mvm' else False
 
         # Game loop
         while not self.game_finished:
@@ -671,15 +751,18 @@ class ConnectFour:
                 if event.type == pygame.QUIT:
                     self.quitgame()
 
-            if pvp or (pve and self.player == 1):
+            if pvp or (pve and self.player == 1) or (pvm and self.player == -1):
                 self.player_move()
             else:
-                self.random_move()
+                if pve or (evm and self.player == -1):
+                    self.random_move()
+                elif pvm or evm or mvm:
+                    self.make_mmv_move(player=self.player, print_info=True)
 
             # Update the game field
             self.update_board()
 
-            if eve:
+            if eve or (evm and self.player == -1):
                 # Wait one second, that way it is easier to follow for observers
                 time.sleep(1)
 
