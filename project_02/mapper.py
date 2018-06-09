@@ -78,7 +78,7 @@ class Map:
             if print_result:
                 self.show_map(grid_map)
 
-    def get_aStar_path(self, source, target, use_nx=True, print_result=True):
+    def get_astar_path(self, source, target, use_nx=True, print_result=True):
         """Uses the NetworkX algorithm for A* path. Using euclidean distance."""
         grid_map = dcp(self.m)
 
