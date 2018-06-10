@@ -99,7 +99,7 @@ class Node:
 
                 # Take the Min / Max value (depends on level of tree)
                 value = mmd[minmax](vl)
-                child = vl.index(value)
+                child = self.children[vl.index(value)].label
                 self.value = value
 
         return value, child

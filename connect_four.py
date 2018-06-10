@@ -24,7 +24,7 @@ class ConnectFour:
         self.game_field = np.zeros((self.y_size, self.x_size), dtype=int)
 
         # Helper dict to keep track of played tokens
-        self.offset = {c: 5 for c in range(0, self.x_size)}
+        self.offset = {c: self.y_size-1 for c in range(0, self.x_size)}
 
         # Symbol mapping
         self.symbols = {1: 'Y', -1: 'R', 0: ' '}
@@ -370,7 +370,7 @@ class ConnectFour:
     def reset_game(self):
         """Resets the game state."""
         self.game_field = np.zeros((self.y_size, self.x_size), dtype=int)
-        self.offset = {c: 5 for c in range(0, self.x_size)}
+        self.offset = {c: self.y_size-1 for c in range(0, self.x_size)}
         self.player = 1
         self.game_finished = False
         self.is_draw = False
@@ -544,6 +544,11 @@ class ConnectFour:
         :param depth: Determines the max depth of the tree.
         """
 
+        allowed_columns = []
+        for column in range(0, self.x_size):
+            if offset[column] > -1:
+                allowed_columns.append(column)
+
         if root is None:
             # Build a new tree
             tree = Tree()
@@ -551,7 +556,8 @@ class ConnectFour:
 
         if len(root.children) == 0:
             # There are no children so new moves need to be generated
-            for column in range(0, self.x_size):
+            #for column in range(0, self.x_size):
+            for column in allowed_columns:
                 if self.move_allowed(column):
 
                     # Preset node_label
@@ -619,7 +625,6 @@ class ConnectFour:
             print("[INFO] MMV decided for column '{}' with a value of '{}'.".format(column, value))
 
         self.make_a_move(column)
-
 
     ######################
     # PyGame definitions #
