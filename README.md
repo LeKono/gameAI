@@ -22,25 +22,56 @@ Check out the [project description](https://docs.google.com/viewer?a=v&pid=sites
 * Realize GUI with user input
 * Try to collect 'good move' statistics
 
-### Presentation ###
-The presentations (at least for project 01) are held using Jupyter Notebook. To start
+## Project 02 ##
+Check out the [Project description](https://docs.google.com/viewer?a=v&pid=sites&srcid=ZGVmYXVsdGRvbWFpbnxiaXRnYW1lYWl8Z3g6NmE4ZTEyNjNkZTQzNWVmYg).
+
+### Task 1 ###
+* Compute number of nodes in TicTacToe game tree
+* Explain difference in numbers
+* Compute complete game tree ignoring symmetries
+* What is the number of nodes?
+* How many nodes correspond to a win for X?
+* What is the branching factor of the tree?
+
+### Task 2 ###
+* Implement MinMax algorithm
+* Use the implementation to compute some MinMax results
+* Consider tree with given MinMax value to its nodes
+* Discuss a checking for alternatives in cases of ties
+
+### Task 3 ###
+* Implement MinMax search for Connect4
+* Create an evaluation function
+* Let the computer play a tournament and collect statistics
+* **Bonus:** Update `connect_four.py` to implement any size of field
+
+### Task 4 ###
+* Implement controller for breakout
+* Modify `breakout.py` to increase speed over time
+
+### Task 5 ###
+* Implement a program to read map data from a `.txt` file
+* Put map data into a graph
+* Implement Dijkstra's algorithm
+* Implement A* algorithm and use Euclidean distance
+
+## Project 03 ##
+
+### TBD ###
+
+## Presentation ##
+The presentations are held using Jupyter Notebook. To start
 the presentation just run:
 
 `jupyter nbconvert Presentation.ipynb --to slides --post serve`
 
-In the game_ai dictionary.
-
-## Project 02 ##
-Check out the [Project description](https://docs.google.com/viewer?a=v&pid=sites&srcid=ZGVmYXVsdGRvbWFpbnxiaXRnYW1lYWl8Z3g6NmE4ZTEyNjNkZTQzNWVmYg).
-
-### TBD ###
-
 ## How do I get set up? ##
 To get the project on your system:
 
-* You need to have Python 2.7.x or python 3.x
-* You need git to be installed on your system
-* Run `git clone https://bitbucket.org/LeKono/game_ai.git` to clone the repo
+* You need to have Python 2.7.x or Python 3.x
+* You need `git` to be installed on your system
+* Run `git clone https://bitbucket.org/LeKono/game_ai.git` to clone the repo from BitBucket
+* Run `https://github.com/LeKono/gameAI.git` to clone the repo from GitHub
 
 Get it started:
 
