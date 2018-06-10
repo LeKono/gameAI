@@ -1,7 +1,10 @@
+import time
+
 import numpy as np
 import networkx as nx
 
 from copy import deepcopy as dcp
+
 
 class Map:
 
@@ -29,72 +32,188 @@ class Map:
         for i, row in enumerate(map_data.readlines()):
             new_row = row.strip().split(" ")
             map_array.append(new_row)
+
+            # Iterate over every clean row and add the nodes to the graph.
             for j, column in enumerate(new_row):
-                self.graph.add_node((i, j))
-                self.graph.nodes[(i, j)]['access'] = int(column)
+                if int(column) == 0:
+                    self.graph.add_node((i, j))
 
-                # Add edge to left node
-                if self.graph.has_node((i-1, j)) and self.graph.nodes[(i-1, j)]['access'] == 0:
-                    self.graph.add_edge((i, j), (i-1, j))
+                    # Add edge to left node
+                    if self.graph.has_node((i-1, j)):
+                        self.graph.add_edge((i, j), (i-1, j))
 
-                # Add edge to above node
-                if self.graph.has_node((i, j-1)) and self.graph.nodes[(i, j-1)]['access'] == 0:
-                    self.graph.add_edge((i, j), (i, j-1))
+                    # Add edge to above node
+                    if self.graph.has_node((i, j-1)):
+                        self.graph.add_edge((i, j), (i, j-1))
 
         map_data.close()
 
         return map_array
 
-    # Translate to networkX
-
-    def show_map(self, grid_map=None):
+    def print_map(self, grid_map=None, symbols=False):
         """Prints out the array of the map.
 
         :param grid_map: Grid-Map that should be drawn.
         """
         grid_map = grid_map if grid_map is not None else self.m
-        for r in grid_map:
-            rp = ""
-            for c in r:
-                if c == '0':
-                    rp += " \033[1;37m\u25AE\033[0m "
-                elif c == '1':
-                    rp += " \u25AE "
-                elif c == 'X':
-                    rp += " \033[1;32m\u25AE\033[0m "
-                elif c == 'Y':
-                    rp += " \033[1;31m\u25AE\033[0m "
-                elif c == '-':
-                    rp += " \033[1;34m\u25AE\033[0m "
-            print(rp)
 
-    def get_dijkstra_path(self, source, target, use_nx=True, print_result=True):
+        if not symbols:
+            for r in grid_map:
+                rp = ""
+                for c in r:
+                    if c == '0':
+                        # Unvisited nodes
+                        rp += " \033[1;37m\u25AE\033[0m "
+                    elif c == '1':
+                        # Unaccessible nodes
+                        rp += " \u25AE "
+                    elif c == 'X':
+                        # Start node
+                        rp += " \033[1;32m\u25AE\033[0m "
+                    elif c == 'Y':
+                        # Target node
+                        rp += " \033[1;31m\u25AE\033[0m "
+                    elif c == '-':
+                        # Path node
+                        rp += " \033[1;34m\u25AE\033[0m "
+                    else:
+                        # Visited node
+                        rp += " \033[1;35m\u25AE\033[0m "
+                print(rp)
+        else:
+            for row in grid_map:
+                print(row)
+
+    def get_dijkstra_path(self, source, target, use_nx=True, print_result=True, symbol_print=True):
         """Uses the NetworkX algorithm for dijkstra path."""
         grid_map = dcp(self.m)
-        if use_nx:
-            path = nx.dijkstra_path(self.graph, source, target)
-            for x, y in path:
-                grid_map[y][x] = '-'
-            grid_map[source[1]][source[0]] = 'X'
-            grid_map[target[1]][target[0]] = 'Y'
-
-            if print_result:
-                self.show_map(grid_map)
-
-    def get_astar_path(self, source, target, use_nx=True, print_result=True):
-        """Uses the NetworkX algorithm for A* path. Using euclidean distance."""
-        grid_map = dcp(self.m)
+        shortest_path = None
 
         if use_nx:
-            path = nx.astar_path(self.graph, source, target, nx.generators.geometric.euclidean)
-            for x, y in path:
+            # Use the pre-implemented dijkstra algorithm that ships with NetworkX (no visited information)
+            shortest_path = nx.dijkstra_path(self.graph, source, target)
+
+        else:
+            # Implementation of Dijkstra Algorithm
+            weight = 1
+
+            distance = {node: 100000 if node != source else 0 for node in self.graph.nodes}
+            p = {source: -1}
+            fringe = list(self.graph.nodes)
+            closed = []
+
+            while len(fringe) > 0:
+                u = None
+                for node in fringe:
+
+                    if u is None:
+                        u = node
+
+                    elif distance[node] < distance[u]:
+                        u = node
+
+                closed.append(u)
+                fringe.remove(u)
+                grid_map[u[0]][u[1]] = 'V'
+
+                for neighbor in self.graph.neighbors(u):
+                    if neighbor not in closed:
+                        if distance[neighbor] > distance[u] + weight:
+                            distance[neighbor] = distance[u] + weight
+                            p[neighbor] = u
+
+            path = []
+            t = target
+
+            while p[t] != -1:
+                path.append(t)
+                t = p[t]
+
+            path.append(source)
+            path.reverse()
+            shortest_path = path
+
+        if shortest_path is not None:
+            for x, y in shortest_path:
                 grid_map[y][x] = '-'
-            grid_map[source[1]][source[0]] = 'X'
-            grid_map[target[1]][target[0]] = 'Y'
+                grid_map[source[1]][source[0]] = 'X'
+                grid_map[target[1]][target[0]] = 'Y'
 
         if print_result:
-            self.show_map(grid_map)
+            self.print_map(grid_map=grid_map, symbols=symbol_print)
 
-    def mapping(self):
-        """Coordinate 0,0 bottom left"""
-        pass
+        return shortest_path
+
+    def get_astar_path(self, source, target, use_nx=True, print_result=True, symbol_print=True):
+        """Uses the NetworkX algorithm for A* path. Using euclidean distance."""
+        grid_map = dcp(self.m)
+        shortest_path = None
+        weight = 1
+
+        # Use euclidean distance calculation that ships with NetworkX
+        euclidean_distance = nx.generators.geometric.euclidean
+
+        if use_nx:
+            # Use the pre-implemented A* algorithm that ships with NetworkX (no visited information)
+            shortest_path = nx.astar_path(self.graph, source, target, euclidean_distance)
+
+        else:
+            # Implementation of A* Algorithm
+            closed = []
+            fringe = [source]
+            p = {
+                source: -1
+            }
+            g = {
+                source: 0
+            }
+            f = {
+                source: g[source] + euclidean_distance(source, target)
+            }
+
+            while len(fringe) > 0:
+                u = None
+                for node in fringe:
+                    if u is None:
+                        u = node
+                    elif f[node] < f[u]:
+                        u = node
+
+                if u == target:
+                    break
+
+                closed.append(u)
+                fringe.remove(u)
+                grid_map[u[0]][u[1]] = 'V'
+
+                for neighbor in self.graph.neighbors(u):
+                    if neighbor not in closed:
+                        newg = g[u] + weight
+                        if neighbor not in fringe or g[neighbor] > newg:
+                            g[neighbor] = newg
+                            f[neighbor] = g[neighbor] + euclidean_distance(neighbor, target)
+                            p[neighbor] = u
+                            if neighbor not in fringe:
+                                fringe.append(neighbor)
+
+            path = []
+            t = target
+
+            while p[t] != -1:
+                path.append(t)
+                t = p[t]
+
+            path.append(source)
+            path.reverse()
+            shortest_path = path
+
+        if shortest_path is not None:
+            for x, y in shortest_path:
+                grid_map[y][x] = '-'
+                grid_map[source[1]][source[0]] = 'X'
+                grid_map[target[1]][target[0]] = 'Y'
+
+        if print_result:
+            self.print_map(grid_map=grid_map, symbols=symbol_print)
+
+        return shortest_path

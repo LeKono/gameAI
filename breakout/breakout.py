@@ -89,7 +89,9 @@ class Ball(pygame.sprite.Sprite):
             off a horizontal surface (not a vertical one) """
 
         self.direction = (180 - self.direction) % 360
-        self.direction -= diff
+        #self.direction -= diff
+
+        print(self.direction)
 
     def update(self):
         """ Update the position of the ball. """
@@ -130,6 +132,8 @@ class Player(pygame.sprite.Sprite):
     """ This class represents the bar at the bottom that the
     player controls. """
 
+    speed = 10.0
+
     def __init__(self):
         """ Constructor for Player. """
         # Call the parent's constructor
@@ -148,132 +152,169 @@ class Player(pygame.sprite.Sprite):
         self.rect.x = 0
         self.rect.y = self.screenheight - self.height
 
-    def update(self):
-        """ Update the player position. """
-        # Get where the mouse is
-        pos = pygame.mouse.get_pos()
-        # Set the left side of the player bar to the mouse position
-        self.rect.x = pos[0]
+    def update(self, key_input):
+        """ Update the player position.
+
+        :param key_input: Input from keyword (Arrow keys left / right)
+        """
+        if key_input[pygame.K_LEFT]:
+            self.rect.x -= self.speed
+        elif key_input[pygame.K_RIGHT]:
+            self.rect.x += self.speed
+
         # Make sure we don't push the player paddle
         # off the right side of the screen
         if self.rect.x > self.screenwidth - self.width:
             self.rect.x = self.screenwidth - self.width
 
+    def controler_update(self, ball):
+        """Controler agent that updates the player position"""
 
-# Call this function so the Pygame library can initialize itself
-pygame.init()
+        if ball.y > self.rect.height + ball.height + 1:
+            if ball.rect.center[0] > self.rect.center[0]:
+                self.rect.x += self.speed
+            elif ball.x + ball.width / 2 < self.rect.x + self.width / 2:
+                self.rect.x -= self.speed
 
-# Create an 800x600 sized screen
-screen = pygame.display.set_mode([800, 600])
+        # Make sure we don't push the player paddle
+        # off the right side of the screen
+        if self.rect.x > self.screenwidth - self.width:
+            self.rect.x = self.screenwidth - self.width
 
-# Set the title of the window
-pygame.display.set_caption('Breakout')
+        if self.rect.x < 0:
+            self.rect.x = 0
 
-# Enable this to make the mouse disappear when over our window
-pygame.mouse.set_visible(0)
 
-# This is a font we use to draw text on the screen (size 36)
-font = pygame.font.Font(None, 36)
+def play_breakout():
 
-# Create a surface we can draw on
-background = pygame.Surface(screen.get_size())
+    ai = True
 
-# Create sprite lists
-blocks = pygame.sprite.Group()
-balls = pygame.sprite.Group()
-allsprites = pygame.sprite.Group()
+    # Call this function so the Pygame library can initialize itself
+    pygame.init()
 
-# Create the player paddle object
-player = Player()
-allsprites.add(player)
+    # Create an 800x600 sized screen
+    screen = pygame.display.set_mode([800, 600])
 
-# Create the ball
-ball = Ball()
-allsprites.add(ball)
-balls.add(ball)
+    # Set the title of the window
+    pygame.display.set_caption('Breakout')
 
-# The top of the block (y position)
-top = 80
+    # Enable this to make the mouse disappear when over our window
+    pygame.mouse.set_visible(0)
 
-# Number of blocks to create
-blockcount = 32
+    # This is a font we use to draw text on the screen (size 36)
+    font = pygame.font.Font(None, 36)
 
-# --- Create blocks
+    # Create a surface we can draw on
+    background = pygame.Surface(screen.get_size())
 
-# Five rows of blocks
-for row in range(5):
-    # 32 columns of blocks
-    for column in range(0, blockcount):
-        # Create a block (color,x,y)
-        block = Block(blue, column * (block_width + 2) + 1, top)
-        blocks.add(block)
-        allsprites.add(block)
-    # Move the top of the next row down
-    top += block_height + 2
+    # Create sprite lists
+    blocks = pygame.sprite.Group()
+    balls = pygame.sprite.Group()
+    allsprites = pygame.sprite.Group()
 
-# Clock to limit speed
-clock = pygame.time.Clock()
+    # Create the player paddle object
+    player = Player()
+    allsprites.add(player)
 
-# Is the game over?
-game_over = False
+    # Create the ball
+    ball = Ball()
+    allsprites.add(ball)
+    balls.add(ball)
 
-# Exit the program?
-exit_program = False
+    # The top of the block (y position)
+    top = 80
 
-# Main program loop
-while not exit_program:
+    # Number of blocks to create
+    blockcount = 32
 
-    # Limit to 30 fps
-    clock.tick(30)
+    # --- Create blocks
 
-    # Clear the screen
-    screen.fill(black)
+    # Five rows of blocks
+    for row in range(5):
+        # 32 columns of blocks
+        for column in range(0, blockcount):
+            # Create a block (color,x,y)
+            block = Block(blue, column * (block_width + 2) + 1, top)
+            blocks.add(block)
+            allsprites.add(block)
 
-    # Process the events in the game
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            exit_program = True
+        # Move the top of the next row down
+        top += block_height + 2
 
-    # Update the ball and player position as long
-    # as the game is not over.
-    if not game_over:
-        # Update the player and ball positions
-        player.update()
-        game_over = ball.update()
+    # Clock to limit speed
+    clock = pygame.time.Clock()
 
-    # If we are done, print game over
-    if game_over:
-        text = font.render("Game Over", True, white)
-        textpos = text.get_rect(centerx=background.get_width() / 2)
-        textpos.top = 300
-        screen.blit(text, textpos)
+    # Is the game over?
+    game_over = False
 
-    # See if the ball hits the player paddle
-    if pygame.sprite.spritecollide(player, balls, False):
-        # The 'diff' lets you try to bounce the ball left or right
-        # depending where on the paddle you hit it
-        diff = (player.rect.x + player.width / 2) - (ball.rect.x + ball.width / 2)
+    # Exit the program?
+    exit_program = False
 
-        # Set the ball's y position in case
-        # we hit the ball on the edge of the paddle
-        ball.rect.y = screen.get_height() - player.rect.height - ball.rect.height - 1
-        ball.bounce(diff)
+    # Main program loop
+    while not exit_program:
 
-    # Check for collisions between the ball and the blocks
-    deadblocks = pygame.sprite.spritecollide(ball, blocks, True)
+        # Limit to 30 fps
+        clock.tick(60)
 
-    # If we actually hit a block, bounce the ball
-    if len(deadblocks) > 0:
-        ball.bounce(0)
+        # Clear the screen
+        screen.fill(black)
 
-        # Game ends if all the blocks are gone
-        if len(blocks) == 0:
-            game_over = True
+        # Process the events in the game
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                exit_program = True
 
-    # Draw Everything
-    allsprites.draw(screen)
+        if not ai:
+            key_input = pygame.key.get_pressed()
 
-    # Flip the screen and show what we've drawn
-    pygame.display.flip()
+        # Update the ball and player position as long
+        # as the game is not over.
+        if not game_over:
+            # Update the player and ball positions
+            if not ai:
+                player.update(key_input) #ai=True)
+            else:
+                player.controler_update(ball)
 
-pygame.quit()
+            game_over = ball.update()
+
+        # If we are done, print game over
+        if game_over:
+            text = font.render("Game Over", True, white)
+            textpos = text.get_rect(centerx=background.get_width() / 2)
+            textpos.top = 300
+            screen.blit(text, textpos)
+
+        # See if the ball hits the player paddle
+        if pygame.sprite.spritecollide(player, balls, False):
+            # The 'diff' lets you try to bounce the ball left or right
+            # depending where on the paddle you hit it
+            diff = (player.rect.x + player.width / 2) - (ball.rect.x + ball.width / 2)
+
+            # Set the ball's y position in case
+            # we hit the ball on the edge of the paddle
+            ball.rect.y = screen.get_height() - player.rect.height - ball.rect.height - 1
+            ball.bounce(diff)
+
+        # Check for collisions between the ball and the blocks
+        deadblocks = pygame.sprite.spritecollide(ball, blocks, True)
+
+        # If we actually hit a block, bounce the ball
+        if len(deadblocks) > 0:
+            ball.bounce(0)
+
+            # Game ends if all the blocks are gone
+            if len(blocks) == 0:
+                game_over = True
+
+        # Draw Everything
+        allsprites.draw(screen)
+
+        # Flip the screen and show what we've drawn
+        pygame.display.flip()
+
+    pygame.quit()
+
+
+if __name__ == '__main__':
+    play_breakout()

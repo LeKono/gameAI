@@ -627,7 +627,10 @@ class ConnectFour:
         value, column = self.game_tree.calculate_mmv(minmax=player)
 
         if print_info:
-            print("[INFO] MMV decided for column '{}' with a value of '{}'.".format(column, value))
+            print("[INFO] Player {}: MMV decided for column '{}' with a value of '{}'.".format(
+                self.symbols[player],
+                column,
+                value))
 
         self.make_a_move(column)
 
@@ -767,7 +770,7 @@ class ConnectFour:
                 if pve or (evm and self.player == -1):
                     self.random_move()
                 elif pvm or evm or mvm:
-                    self.make_mmv_move(player=self.player, print_info=True)
+                    self.make_mmv_move(player=self.player, max_depth=2, print_info=True)
 
             # Update the game field
             self.update_board()
