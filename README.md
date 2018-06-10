@@ -71,7 +71,7 @@ To get the project on your system:
 * You need to have Python 2.7.x or Python 3.x
 * You need `git` to be installed on your system
 * Run `git clone https://bitbucket.org/LeKono/game_ai.git` to clone the repo from BitBucket
-* Run `https://github.com/LeKono/gameAI.git` to clone the repo from GitHub
+* Run `git clone https://github.com/LeKono/gameAI.git` to clone the repo from GitHub
 
 Get it started:
 
