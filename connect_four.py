@@ -502,10 +502,12 @@ class ConnectFour:
         if print_direction_values:
             print("\n=====\n[INFO] Starting direction calculations ... \n=====\n")
             print(game_state, "\n")
+
         # All fields occupied by player Y
         Yys, Yxs = np.where(game_state == 1)
         Y_value = 0
 
+        # Loop over all Y-tokens and sum up the values for player Y if the value depends on at least 3 OTHER fields
         for i in range(0, Yxs.size):
             Y_tokens = self.check_all_directions(column=Yxs[i], row=Yys[i], target_player=1)
             if print_direction_values:
@@ -521,10 +523,11 @@ class ConnectFour:
         Rys, Rxs = np.where(game_state == -1)
         R_value = 0
 
+        # Loop over all Y-tokens and sum up the values for player Y if the value depends on at least 3 OTHER fields
         for i in range(0, Rxs.size):
             R_tokens = self.check_all_directions(column=Rxs[i], row=Rys[i], target_player=-1)
             if print_direction_values:
-                print("R_tokens ({}, {}):\n{}".format(Rxs[i], Rys[i], Y_tokens))
+                print("R_tokens ({}, {}):\n{}".format(Rxs[i], Rys[i], R_tokens))
             for key, data in R_tokens.items():
                 if sum(data[:2]) > 2:
                     R_value += data[2]
@@ -539,11 +542,14 @@ class ConnectFour:
 
         :param game_state: Configuration of game field that a subtree should be created for.
         :param offset: The field offset of the game_field (simulates gravity of Connect4 board).
-        :param player: The player whos turn it is.
+        :param player: The player who moves this turn.
         :param root: The 'root' node of the subtree (a node in the tree).
         :param depth: Determines the max depth of the tree.
+
+        :returns: The root node of the subtree.
         """
 
+        # Get all columns that are not full yet
         allowed_columns = []
         for column in range(0, self.x_size):
             if offset[column] > -1:
@@ -556,11 +562,10 @@ class ConnectFour:
 
         if len(root.children) == 0:
             # There are no children so new moves need to be generated
-            #for column in range(0, self.x_size):
             for column in allowed_columns:
                 if self.move_allowed(column):
 
-                    # Preset node_label
+                    # Preset node_label as the column
                     node_label = column
 
                     # Determine if the move wins the game
@@ -573,7 +578,7 @@ class ConnectFour:
                     if winning_move or depth == 0:
                         # If the new node is a winning move just append and continue
                         root.add_child(label=node_label,
-                                       value=self.get_state_value(game_state=game_state))#, print_direction_values=True))
+                                       value=self.get_state_value(game_state=game_state))
 
                     elif depth > 0:
                         # If the new node was not a winning move go ahead and build the sub_tree
@@ -602,8 +607,9 @@ class ConnectFour:
         return root
 
     def make_mmv_move(self, player=1, max_depth=2, print_info=False):
-        """Suggests a column based on minmax search.
+        """Makes a move based on minmax search.
 
+        :param player: The player that should make the MMV move.
         :param max_depth: Determines the maximal depth of the subtree used for MMV.
         :param print_info: Flag to print which column was picked and what value it had.
         """
@@ -619,7 +625,6 @@ class ConnectFour:
             depth=max_depth)
 
         value, column = self.game_tree.calculate_mmv(minmax=player)
-        #self.game_tree = self.game_tree.children[column]
 
         if print_info:
             print("[INFO] MMV decided for column '{}' with a value of '{}'.".format(column, value))
@@ -707,22 +712,22 @@ class ConnectFour:
             self.button((250, 200, 150, 50), self.GRAY, "E.vs.E.", mouse, click, self.start_gui_game)
 
             # Computer vs. MMV-Computer
-            self.button((250, 275, 150, 50), self.GRAY, "E. vs. MMV.", mouse, click, self.start_gui_game, ['evm'])
+            self.button((250, 275, 150, 50), self.GRAY, "MMV vs. E.", mouse, click, self.start_gui_game, ['evm'])
 
             # Human vs. Computer
             self.button((250, 350, 150, 50), self.GRAY, "P.vs.E.", mouse, click, self.start_gui_game, ['pve'])
 
             # Human vs. MMV-Computer
-            self.button((250, 425, 150, 50), self.GRAY, "P. vs. MMV.", mouse, click, self.start_gui_game, ['pvm'])
+            self.button((250, 425, 150, 50), self.GRAY, "MMV vs. P.", mouse, click, self.start_gui_game, ['pvm'])
 
             # MMV-Computer vs. MMV-Computer
-            self.button((250, 500, 150, 50), self.GRAY, "MMV.vs.MMV.", mouse, click, self.start_gui_game, ['mvm'])
+            self.button((250, 500, 150, 50), self.GRAY, "MMV vs MMV", mouse, click, self.start_gui_game, ['mvm'])
 
             # Human vs. Human
             self.button((250, 575, 150, 50), self.GRAY, "P.vs.P.", mouse, click, self.start_gui_game, ['pvp'])
 
             # Quit
-            #self.button((250, 575, 150, 50), self.GRAY, "Quit", mouse, click, self.quitgame)
+            self.button((665, 10, 25, 25), self.RED, "X", mouse, click, self.quitgame)
 
             pygame.display.update()
             self.CLOCK.tick()
@@ -821,9 +826,13 @@ class ConnectFour:
         """Creates a view of Connect4 using PyGame.
 
         :param mode: Parameter to set the mode of the game. This can be one of:
-                        - eve: Environment vs. Environment
-                        - pve: Player vs. Environment
+                        - eve: Environment (random) vs. Environment (random)
+                        - evm: Environment (random) vs. MMV Algorithm
+                        - pve: Player vs. Environment (random)
                         - pvp: Player vs. Player
+                        - pvm: Player vs. MMV Algorithm
+                        - mvm: MMV Algorithm vs. MMV Algorithm
+
         """
         self.reset_game()
         self.update_board()
