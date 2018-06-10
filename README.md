@@ -56,8 +56,10 @@ run the code.
 
 ### The Team ###
 
+* Agarwal, Swasti
 * Balci, Mehmet
-* Brüggemann, Thomas
+* Biswas, Tonmoy
+* BrÃ¼ggemann, Thomas
 * Ibhaluobe, David
 * Khan, Mohammad Asif Irfan
 * Konotopez, Andrej
