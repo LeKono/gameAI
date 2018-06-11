@@ -10,15 +10,16 @@ class Tree:
         """Builds the tree map"""
         self.tree_map[self.root.label] = self.root.get_sub_tree(max_depth)
 
-    def calculate_mmv(self, minmax=1, update=True):
+    def calculate_mmv(self, minmax=1, update=True, print_info=False):
         """Min max calculation using same function from Node.
 
         :param minmax: Determines if next level should be searched for max or min. Set to 1 for max and to -1 for min.
         :param update: Flag if a given node value should be updated by looking on its childrens values.
+        :param print_info: Should info be printed?
 
         :returns: Value of this tree.
         """
-        return self.root.calculate_mmv(minmax=minmax, update=update)
+        return self.root.calculate_mmv(minmax=minmax, update=update, print_info=print_info)
 
 
 class Node:
@@ -70,11 +71,12 @@ class Node:
 
         return sub_tree
 
-    def calculate_mmv(self, minmax=1, update=True):
+    def calculate_mmv(self, minmax=1, update=True, print_info=False):
         """Determines the MinMaxValue for this node.
 
         :param minmax: Determines if next level should be searched for max or min. Set to 1 for max and to -1 for min.
         :param update: Flag if a given node value should be updated by looking on its childrens values.
+        :param print_info: Should info be printed?
 
         :returns: Value of this node.
         """
@@ -96,12 +98,15 @@ class Node:
                 # Value list for children
                 vl = []
                 for child in self.children:
-                    vl.append(child.calculate_mmv(minmax=minmax * -1, update=update)[0])
+                    vl.append(child.calculate_mmv(minmax=minmax * -1, update=update, print_info=print_info)[0])
 
                 # Take the Min / Max value (depends on level of tree)
                 value = mmd[minmax](vl)
                 child = self.children[vl.index(value)].label
                 self.value = value
+
+                if print_info:
+                    print("[INFO] Used '{}' and picked '{}' of node '{}'.".format(minmax, value, child))
 
         return value, child
 

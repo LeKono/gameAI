@@ -387,9 +387,10 @@ class ConnectFour:
             },
         }
 
-    def play_a_game(self, winners_print=True):
+    def play_a_game(self, use_mmv=False, winners_print=True):
         """Two players can play a game.
 
+        :param use_mmv: Flag that states if MMV should be used as move for Y.
         :param winners_print: Bool to determine if winning game_field should be printed.
 
         :returns: Tuple of (Player who had last turn, bool if game was a draw)
@@ -404,7 +405,10 @@ class ConnectFour:
             print("You may want to reset the game to play a new one. Use .reset_game() method!")
         else:
             while not self.game_finished:
-                self.random_move()
+                if use_mmv and self.player == 1:
+                    self.make_mmv_move()
+                else:
+                    self.random_move()
 
             if self.game_finished:
 
@@ -428,9 +432,10 @@ class ConnectFour:
 
         return self.player, self.is_draw
 
-    def play_a_tournament(self, laps=1000, modulo=100):
+    def play_a_tournament(self, use_mmv=False, laps=1000, modulo=100):
         """Lets two NPC players play a random tournament.
 
+        :param use_mmv: Flag that states if MMV should be used as move for Y.
         :param laps: determines how many laps should be played.
         :param modulo: Modulo value for iterative printing
         """
@@ -441,7 +446,7 @@ class ConnectFour:
         }
 
         for l in range(0, laps):
-            winner, draw = self.play_a_game(winners_print=False)
+            winner, draw = self.play_a_game(use_mmv=use_mmv, winners_print=False)
             if draw:
                 tournament_statistics[0] += 1
             else:

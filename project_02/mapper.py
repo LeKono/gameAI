@@ -85,9 +85,21 @@ class Map:
                 print(row)
 
     def get_dijkstra_path(self, source, target, use_nx=True, print_result=True, symbol_print=True):
-        """Uses the NetworkX algorithm for dijkstra path."""
+        """Uses the NetworkX algorithm for dijkstra path.
+
+        :param source: Source node coordinates (0,0) is bottom left.
+        :param target: Target node coordinates (0,0) is bottom left.
+        :param use_nx: States if NetworkX implementation of Dijkstra should be used.
+        :param print_result: States if the resulting graph (including path should be printed).
+        :param symbol_print: States if symbols (0,1, ...) or special characters should be printed.
+
+        :returns: Shortest path
+        """
         grid_map = dcp(self.m)
         shortest_path = None
+
+        source = self.map_coordinates(source)
+        target = self.map_coordinates(target)
 
         if use_nx:
             # Use the pre-implemented dijkstra algorithm that ships with NetworkX (no visited information)
@@ -145,10 +157,22 @@ class Map:
         return shortest_path
 
     def get_astar_path(self, source, target, use_nx=True, print_result=True, symbol_print=True):
-        """Uses the NetworkX algorithm for A* path. Using euclidean distance."""
+        """Uses the NetworkX algorithm for A* path. Using euclidean distance.
+
+        :param source: Source node coordinates (0,0) is bottom left.
+        :param target: Target node coordinates (0,0) is bottom left.
+        :param use_nx: States if NetworkX implementation of Dijkstra should be used.
+        :param print_result: States if the resulting graph (including path should be printed).
+        :param symbol_print: States if symbols (0,1, ...) or special characters should be printed.
+
+        :returns: Shortest path
+        """
         grid_map = dcp(self.m)
         shortest_path = None
         weight = 1
+
+        source = self.map_coordinates(source)
+        target = self.map_coordinates(target)
 
         # Use euclidean distance calculation that ships with NetworkX
         euclidean_distance = nx.generators.geometric.euclidean
@@ -217,3 +241,11 @@ class Map:
             self.print_map(grid_map=grid_map, symbols=symbol_print)
 
         return shortest_path
+
+    def map_coordinates(self, coordinates):
+        """Maps the coordinates such that (0,0) is bottom left of the graph.
+
+        :param coordinates: Tuple of coordinates (x, y)
+        """
+        print(coordinates)
+        return coordinates[0], len(self.m)-coordinates[1]-1

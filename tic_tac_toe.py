@@ -1,9 +1,11 @@
 import json
-from copy import copy as cp
+
 import numpy as np
+import networkx as nx
 import matplotlib.pyplot as plt
 
-from project_02.forest import Tree
+from hashlib import sha1
+from copy import copy as cp
 
 
 class TicTacToe:
@@ -439,7 +441,11 @@ class TicTacToe:
             self.probability_data = json.load(infile)
 
     def build_game_tree(self, game_field, moving_player):
-        """Builds the game tree for tic tac toe."""
+        """Builds the game tree for tic tac toe.
+
+        :param game_field: Tic Tac Toe board.
+        :param moving_player: Player who makes the turn.
+        """
 
         win = {
             1: 0,
@@ -486,9 +492,73 @@ class TicTacToe:
 
         return win, draw, branches, states
 
-    def print_game_tree(self):
-        """Prints the game tree to stdout."""
-        pass
+    def build_game_graph(self, game_field, moving_player, graph=None, parent_hash=None):
+        """Builds a graph instead of a tree.
+
+        :param game_field: Tic Tac Toe board.
+        :param moving_player: Player who makes the turn.
+        :param graph: A graph object (for recursion)
+        :param parent_hash: The sha1 hash of the parent node (for recursion)
+        """
+        graph = graph if graph is not None else nx.Graph()
+
+        win = {
+            1: 0,
+            -1: 0
+        }
+        draw = 0
+        branches = 0
+        states = 0
+
+        prev_player = moving_player * -1
+
+        if not self.move_was_winning_move(game_field, prev_player):
+            if self.move_still_possible(game_field):
+
+                # Unique state hash
+                state_hash = sha1(game_field).hexdigest()
+
+                if state_hash not in graph.nodes:
+
+                    # Add state to the graph
+                    graph.add_node(state_hash)
+
+                    # Node with children is a state
+                    states += 1
+
+                    # Copy field and player ??
+                    cp_S = cp(game_field)
+                    cp_p = cp(moving_player)
+
+                    # Get all empty cells
+                    xs, ys = np.where(cp_S == 0)
+
+                    # Count branches (children)
+                    branches += xs.size
+
+                    for i in range(0, xs.size):
+                        _, new_S, player = self.move_specific(cp(cp_S), cp_p, (xs[i], ys[i]))
+                        sub_results = self.build_game_graph(new_S, player*-1, graph, state_hash)
+
+                        win[1] += sub_results[0][1]
+                        win[-1] += sub_results[0][-1]
+                        draw += sub_results[1]
+                        branches += sub_results[2]
+                        states += sub_results[3]
+
+                        # Update the graph
+                        graph = sub_results[4]
+
+                if parent_hash is not None:
+                    graph.add_edge(parent_hash, state_hash)
+
+            else:
+                draw += 1
+
+        else:
+            win[prev_player] += 1
+
+        return win, draw, branches, states, graph
 
 if __name__ == '__main__':
     """If the file is started from console it will work exactly like the original version."""

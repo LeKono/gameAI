@@ -91,7 +91,9 @@ class Ball(pygame.sprite.Sprite):
         self.direction = (180 - self.direction) % 360
         #self.direction -= diff
 
-        print(self.direction)
+    def increase_speed(self):
+        """Increases the ball speed"""
+        self.speed += 2.5 #self.speed/2
 
     def update(self):
         """ Update the position of the ball. """
@@ -167,8 +169,11 @@ class Player(pygame.sprite.Sprite):
         if self.rect.x > self.screenwidth - self.width:
             self.rect.x = self.screenwidth - self.width
 
-    def controler_update(self, ball):
+    def controler_update(self, ball, consider_speed=False):
         """Controler agent that updates the player position"""
+
+        if consider_speed and ball.speed/2 > self.speed:
+            self.speed += self.speed/2
 
         if ball.y > self.rect.height + ball.height + 1:
             if ball.rect.center[0] > self.rect.center[0]:
@@ -250,8 +255,16 @@ def play_breakout():
     # Exit the program?
     exit_program = False
 
+    # Ticker for speed increase
+    ticker = 0
+
     # Main program loop
     while not exit_program:
+        ticker += 1
+
+        if ticker % 500 == 0:
+            print("Increasing speed ...")
+            ball.increase_speed()
 
         # Limit to 30 fps
         clock.tick(60)
@@ -272,9 +285,9 @@ def play_breakout():
         if not game_over:
             # Update the player and ball positions
             if not ai:
-                player.update(key_input) #ai=True)
+                player.update(key_input)
             else:
-                player.controler_update(ball)
+                player.controler_update(ball, True)
 
             game_over = ball.update()
 
