@@ -54,6 +54,7 @@ class Map:
         """Prints out the array of the map.
 
         :param grid_map: Grid-Map that should be drawn.
+        :param symbols: Print with normal characters?
         """
         grid_map = grid_map if grid_map is not None else self.m
 
@@ -69,16 +70,16 @@ class Map:
                         rp += " \u25AE "
                     elif c == 'X':
                         # Start node
-                        rp += " \033[1;32m\u25AE\033[0m "
+                        rp += " \033[1;31m\u25AE\033[0m "
                     elif c == 'Y':
                         # Target node
-                        rp += " \033[1;31m\u25AE\033[0m "
+                        rp += " \033[1;32m\u25AE\033[0m "
                     elif c == '-':
                         # Path node
                         rp += " \033[1;34m\u25AE\033[0m "
                     else:
                         # Visited node
-                        rp += " \033[1;35m\u25AE\033[0m "
+                        rp += " \033[1;35mV\033[0m "
                 print(rp)
         else:
             for row in grid_map:
@@ -247,5 +248,4 @@ class Map:
 
         :param coordinates: Tuple of coordinates (x, y)
         """
-        print(coordinates)
         return coordinates[0], len(self.m)-coordinates[1]-1
