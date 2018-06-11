@@ -78,20 +78,21 @@ class Node:
 
         :returns: Value of this node.
         """
+
+        # Dictionary that maps min or max function
         mmd = {
             1: max,
             -1: min
         }
 
-        had_no_value = True if self.value is None else False
-
         # Value of this node
         value = self.value
         child = self.label
 
-        # Loop over the list of children not had_no_value and update and
-        if len(self.children) > 0:
-            if update or self.value is None:
+        if update or self.value is None:
+            # Loop over the list of children not had_no_value and update and
+            if len(self.children) > 0:
+
                 # Value list for children
                 vl = []
                 for child in self.children:
