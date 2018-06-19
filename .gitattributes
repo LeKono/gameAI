@@ -1,2 +1,3 @@
 project_01/*.slides.html linguist-vendored
 project_02/*.slides.html linguist-vendored
+*.ipynb linguist-vendored
