@@ -1,6 +1,5 @@
-import time
+import math
 
-import numpy as np
 import networkx as nx
 
 from copy import deepcopy as dcp
@@ -17,7 +16,7 @@ class Map:
         """
         self.graph = nx.Graph()
         self.m = self.read_map(map_file)
-        self.np_matrix = np.matrix(self.m)
+        #self.np_matrix = np.matrix(self.m)
 
     def read_map(self, map_file):
         """Translates information from a given map file into a list of lists.
@@ -29,22 +28,22 @@ class Map:
 
         map_array = []
 
-        for i, row in enumerate(map_data.readlines()):
+        for y, row in enumerate(map_data.readlines()):
             new_row = row.strip().split(" ")
             map_array.append(new_row)
 
             # Iterate over every clean row and add the nodes to the graph.
-            for j, column in enumerate(new_row):
+            for x, column in enumerate(new_row):
                 if int(column) == 0:
-                    self.graph.add_node((i, j))
-
-                    # Add edge to left node
-                    if self.graph.has_node((i-1, j)):
-                        self.graph.add_edge((i, j), (i-1, j))
+                    self.graph.add_node((y, x))
 
                     # Add edge to above node
-                    if self.graph.has_node((i, j-1)):
-                        self.graph.add_edge((i, j), (i, j-1))
+                    if self.graph.has_node((y-1, x)):
+                        self.graph.add_edge((y-1, x), (y, x))
+
+                    # Add edge to left node
+                    if self.graph.has_node((y, x-1)):
+                        self.graph.add_edge((y, x-1), (y, x))
 
         map_data.close()
 
@@ -110,7 +109,7 @@ class Map:
             # Implementation of Dijkstra Algorithm
             weight = 1
 
-            distance = {node: 100000 if node != source else 0 for node in self.graph.nodes}
+            distance = {node: math.inf if node != source else 0 for node in self.graph.nodes}
             p = {source: -1}
             fringe = list(self.graph.nodes)
             closed = []
@@ -124,6 +123,9 @@ class Map:
 
                     elif distance[node] < distance[u]:
                         u = node
+
+                if u == target:
+                    break
 
                 closed.append(u)
                 fringe.remove(u)
@@ -147,10 +149,11 @@ class Map:
             shortest_path = path
 
         if shortest_path is not None:
-            for x, y in shortest_path:
+            for y, x in shortest_path:
                 grid_map[y][x] = '-'
-                grid_map[source[1]][source[0]] = 'X'
-                grid_map[target[1]][target[0]] = 'Y'
+
+        grid_map[source[0]][source[1]] = 'X'
+        grid_map[target[0]][target[1]] = 'Y'
 
         if print_result:
             self.print_map(grid_map=grid_map, symbols=symbol_print)
@@ -186,15 +189,9 @@ class Map:
             # Implementation of A* Algorithm
             closed = []
             fringe = [source]
-            p = {
-                source: -1
-            }
-            g = {
-                source: 0
-            }
-            f = {
-                source: g[source] + euclidean_distance(source, target)
-            }
+            p = {source: -1}
+            g = {source: 0}
+            f = {source: g[source] + euclidean_distance(source, target)}
 
             while len(fringe) > 0:
                 u = None
@@ -233,10 +230,11 @@ class Map:
             shortest_path = path
 
         if shortest_path is not None:
-            for x, y in shortest_path:
+            for y, x in shortest_path:
                 grid_map[y][x] = '-'
-                grid_map[source[1]][source[0]] = 'X'
-                grid_map[target[1]][target[0]] = 'Y'
+
+        grid_map[source[0]][source[1]] = 'X'
+        grid_map[target[0]][target[1]] = 'Y'
 
         if print_result:
             self.print_map(grid_map=grid_map, symbols=symbol_print)
@@ -244,8 +242,8 @@ class Map:
         return shortest_path
 
     def map_coordinates(self, coordinates):
-        """Maps the coordinates such that (0,0) is bottom left of the graph.
+        """Maps the coordinates (x, y) such that (0,0) is bottom left of the graph.
 
-        :param coordinates: Tuple of coordinates (x, y)
+        :param coordinates: Tuple of coordinates (y, x)
         """
-        return coordinates[0], len(self.m)-coordinates[1]-1
+        return len(self.m)-coordinates[1]-1, coordinates[0]
