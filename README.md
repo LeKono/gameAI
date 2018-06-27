@@ -4,7 +4,7 @@
 
 This project is used to manage all code developed for GameAI lecture at Uni Bonn.
 
-Version: 0.1 (first project)
+Version: 0.2 (second project)
 
 ## Project 01 ##
 Check out the [project description](https://docs.google.com/viewer?a=v&pid=sites&srcid=ZGVmYXVsdGRvbWFpbnxiaXRnYW1lYWl8Z3g6NTY1YjdkMTkzOWM4YjM1NA).
