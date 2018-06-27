@@ -92,7 +92,7 @@ run the code.
 * Biswas, Tonmoy
 * Brüggemann, Thomas
 * [Ibhaluobe, David](https://github.com/ibhal)
-* Khan, Mohammad Asif Irfan
+* [Khan, Mohammad Asif Irfan](https://github.com/asifirfankhan)
 * Konotopez, Andrej
 * Liu, Zhuofan
 * Milchenski, Zdravko
