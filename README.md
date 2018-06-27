@@ -88,7 +88,7 @@ run the code.
 ### The Team ###
 
 * Agarwal, Swasti
-* Balci, Mehmet
+* [Balci, Mehmet](https://github.com/mehmetbalci)
 * Biswas, Tonmoy
 * Brüggemann, Thomas
 * [Ibhaluobe, David](https://github.com/ibhal)
