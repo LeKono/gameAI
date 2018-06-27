@@ -91,7 +91,7 @@ run the code.
 * Balci, Mehmet
 * Biswas, Tonmoy
 * Brüggemann, Thomas
-* Ibhaluobe, David
+* [Ibhaluobe, David](https://github.com/ibhal)
 * Khan, Mohammad Asif Irfan
 * Konotopez, Andrej
 * Liu, Zhuofan
