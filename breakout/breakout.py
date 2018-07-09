@@ -12,6 +12,10 @@
 import math
 import pygame
 
+import skfuzzy as fuzz
+import numpy as np
+from skfuzzy import control as ctrl
+
 # Define some colors
 black = (0, 0, 0)
 white = (255, 255, 255)
@@ -169,17 +173,12 @@ class Player(pygame.sprite.Sprite):
         if self.rect.x > self.screenwidth - self.width:
             self.rect.x = self.screenwidth - self.width
 
-    def controler_update(self, ball, consider_speed=False):
-        """Controler agent that updates the player position"""
-
-        if consider_speed and ball.speed/2 > self.speed:
+    def fuzzy(self, move, consider_speed=True, ball_speed=None):
+        if consider_speed and ball_speed / 2 > self.speed:
             self.speed += self.speed/2
 
-        if ball.y > self.rect.height + ball.height + 1:
-            if ball.rect.center[0] > self.rect.center[0]:
-                self.rect.x += self.speed
-            elif ball.x + ball.width / 2 < self.rect.x + self.width / 2:
-                self.rect.x -= self.speed
+        print("move", self.speed*move)
+        self.rect.x += self.speed * move
 
         # Make sure we don't push the player paddle
         # off the right side of the screen
@@ -188,8 +187,8 @@ class Player(pygame.sprite.Sprite):
 
         if self.rect.x < 0:
             self.rect.x = 0
-
-
+#
+#
 def play_breakout():
 
     ai = True
@@ -262,6 +261,29 @@ def play_breakout():
     while not exit_program:
         ticker += 1
 
+        paddle_position = ctrl.Antecedent(np.arange(0, 800, 1), 'paddle_position')
+        movement = ctrl.Consequent(np.arange(-5, 5, 1), 'movement')
+
+        paddle_position['perfect'] = fuzz.trimf(paddle_position.universe,
+                                                     [player.rect.x, player.rect.center[0], player.rect.x + player.width])
+
+        paddle_position['too_far_right'] = fuzz.trimf(paddle_position.universe,
+                                                           [player.rect.x + player.width - 25 if player.rect.x + player.width - 25 < player.screenwidth else player.screenwidth,
+                                                              player.screenwidth, player.screenwidth])
+
+        paddle_position['too_far_left'] = fuzz.trimf(paddle_position.universe,
+                                                          [0, 0, player.rect.x + 25])
+
+        movement['left'] = fuzz.trimf(movement.universe, [-1, -1, 0])
+        movement['stay'] = fuzz.trimf(movement.universe, [-1, 0, 1])
+        movement['right'] = fuzz.trimf(movement.universe, [1, 1, 1])
+
+        rule1 = ctrl.Rule(paddle_position['too_far_right'], movement['right'])
+        rule2 = ctrl.Rule(paddle_position['perfect'], movement['stay'])
+        rule3 = ctrl.Rule(paddle_position['too_far_left'], movement['left'])
+
+        controller = ctrl.ControlSystem([rule1, rule2, rule3])
+
         if ticker % 500 == 0:
             print("Increasing speed ...")
             ball.increase_speed()
@@ -287,7 +309,12 @@ def play_breakout():
             if not ai:
                 player.update(key_input)
             else:
-                player.controler_update(ball, True)
+                sim = ctrl.ControlSystemSimulation(controller)
+                sim.input['paddle_position'] = ball.rect.center[0]
+                sim.compute()
+                move = sim.output['movement']
+
+                player.fuzzy(move, ball_speed=ball.speed)
 
             game_over = ball.update()
 
