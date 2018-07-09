@@ -245,8 +245,13 @@ class SOM:
 
         # list of X
         X = []
+
         for i, x in enumerate(self.data_nodes['x']):
             X.append((x, self.data_nodes['y'][i], self.data_nodes['z'][i]))
+
+        if creation_steps > len(X):
+            print("Creation_steps is set to len(X).")
+            creation_steps = len(X)
 
         # List of A
         A = self.get_activity_vectors()
@@ -303,13 +308,22 @@ class SOM:
             'z': []
         }
 
+        traj_list = []
+
+        x_t_p = None
+
         for t in range(creation_steps):
-            rnd = np.random.randint(len(X))
-            x_t = X[rnd]
+            if x_t_p is None:
+                rnd = np.random.randint(len(X))
+                x_t = X[rnd]
+            else:
+                x_t = x_t_p
 
             trajectory['x'].append(x_t[0])
             trajectory['y'].append(x_t[1])
             trajectory['z'].append(x_t[2])
+
+            traj_list.append((x_t[0], x_t[1], x_t[2]))
 
             a_t = None
             m = 0
@@ -331,11 +345,18 @@ class SOM:
                     a_t = r
 
             # Compute next state
-            x_t_p = self.compute_vector(x_t, a_t, t='add')
+            x_t_p_candidate = self.compute_vector(x_t, a_t, t='add')
 
-            trajectory['x'].append(x_t_p[0])
-            trajectory['y'].append(x_t_p[1])
-            trajectory['z'].append(x_t_p[2])
+            dist = np.inf
+            for x in X:
+                ed = euclidean_distance(x_t_p_candidate, x)
+
+                if ed < dist:
+
+                    # Make sure one does not revisit nodes.
+                    if x not in traj_list:
+                        x_t_p = x
+                        dist = ed
 
         return trajectory
 
