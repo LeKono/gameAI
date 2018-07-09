@@ -262,7 +262,7 @@ def play_breakout():
         ticker += 1
 
         paddle_position = ctrl.Antecedent(np.arange(0, 800, 1), 'paddle_position')
-        movement = ctrl.Consequent(np.arange(-5, 5, 1), 'movement')
+        movement = ctrl.Consequent(np.arange(-1, 2, 1), 'movement')
 
         paddle_position['perfect'] = fuzz.trimf(paddle_position.universe,
                                                      [player.rect.x, player.rect.center[0], player.rect.x + player.width])
