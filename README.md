@@ -94,6 +94,6 @@ run the code.
 * [Ibhaluobe, David](https://github.com/ibhal)
 * [Khan, Mohammad Asif Irfan](https://github.com/asifirfankhan)
 * Konotopez, Andrej
-* Liu, Zhuofan
+* [Liu, Zhuofan](https://github.com/birdycoder)
 * Milchenski, Zdravko
 * Rahman, Mahfuzur
